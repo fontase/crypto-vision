@@ -15,6 +15,10 @@
 </p>
 
 <p align="center">
+  <img src=".github/demo.svg" alt="Xeepy Demo" width="800">
+</p>
+
+<p align="center">
   <a href="#-installation">Installation</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-scrapers">Scrapers</a> •
