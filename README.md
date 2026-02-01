@@ -10,6 +10,11 @@
 <h1 align="center">🐦 Xeepy</h1>
 <h3 align="center">The Most Comprehensive Python Toolkit for X/Twitter Automation</h3>
 
+
+<h2> <p align="center">
+  <a href="https://docs.xeepy.xyz/">xeepy docs @ docs.xeepy.xyz</a> </h2>
+</p>
+
 <p align="center">
   <strong>154 Python files • 44,000+ lines of code • 100+ classes • 500+ methods</strong>
 </p>
