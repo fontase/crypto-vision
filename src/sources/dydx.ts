@@ -8,9 +8,9 @@
  *           funding rates, sparklines.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestDerivativesSnapshots, ingestOHLCCandles } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = "https://indexer.dydx.trade/v4";
 

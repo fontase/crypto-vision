@@ -51,6 +51,9 @@ import {
   type KeyEntry,
 } from "@/lib/auth.js";
 
+/** Cast Response.json() to a typed record for test assertions. */
+const jsonBody = (res: Response) => res.json() as Promise<Record<string, unknown>>;
+
 // ─── TIER_LIMITS ─────────────────────────────────────────────
 
 describe("TIER_LIMITS", () => {
@@ -62,7 +65,7 @@ describe("TIER_LIMITS", () => {
   });
 
   it("each tier has positive rateLimit and windowSeconds", () => {
-    for (const [name, tier] of Object.entries(TIER_LIMITS)) {
+    for (const [name, tier] of Object.entries(TIER_LIMITS) as [string, TierConfig][]) {
       expect(tier.rateLimit, `${name}.rateLimit`).toBeGreaterThan(0);
       expect(tier.windowSeconds, `${name}.windowSeconds`).toBeGreaterThan(0);
     }
@@ -76,14 +79,14 @@ describe("TIER_LIMITS", () => {
 
   it("all tiers share the same window size", () => {
     const windowSeconds = TIER_LIMITS.public.windowSeconds;
-    for (const tier of Object.values(TIER_LIMITS)) {
+    for (const tier of Object.values(TIER_LIMITS) as TierConfig[]) {
       expect(tier.windowSeconds).toBe(windowSeconds);
     }
   });
 
   it("public tier has the most restrictive limit", () => {
     const minLimit = Math.min(
-      ...Object.values(TIER_LIMITS).map((t) => t.rateLimit),
+      ...(Object.values(TIER_LIMITS) as TierConfig[]).map((t) => t.rateLimit),
     );
     expect(TIER_LIMITS.public.rateLimit).toBe(minLimit);
   });
@@ -278,7 +281,7 @@ describe("apiKeyAuth() middleware", () => {
     const app = buildApp();
     const res = await app.request("/test");
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.tier).toBe("public");
     expect(body.key).toBe("anonymous");
   });
@@ -289,7 +292,7 @@ describe("apiKeyAuth() middleware", () => {
       headers: { "X-API-Key": "totally-invalid-key-xyz" },
     });
     expect(res.status).toBe(401);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.error).toBe("INVALID_API_KEY");
     expect(body.message).toBeDefined();
   });
@@ -306,7 +309,7 @@ describe("apiKeyAuth() middleware", () => {
       headers: { "X-API-Key": "test-auth-key-pro" },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.tier).toBe("pro");
     expect(body.key).toBe("test-auth-key-pro");
   });
@@ -323,7 +326,7 @@ describe("apiKeyAuth() middleware", () => {
       headers: { Authorization: "Bearer test-bearer-key" },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.tier).toBe("basic");
   });
 
@@ -342,7 +345,7 @@ describe("apiKeyAuth() middleware", () => {
       },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.tier).toBe("enterprise");
   });
 
@@ -392,7 +395,7 @@ describe("apiKeyAuth() middleware", () => {
       headers: { "X-API-Key": TEST_ADMIN_KEY },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.key).toBe(TEST_ADMIN_KEY);
     // Admin keys seeded without explicit tier get "pro" by default
     expect(["pro", "basic", "enterprise"]).toContain(body.tier);
@@ -410,7 +413,7 @@ describe("apiKeyAuth() middleware", () => {
       headers: { Authorization: "bearer bearer-case-key" },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.tier).toBe("pro");
   });
 
@@ -424,7 +427,7 @@ describe("apiKeyAuth() middleware", () => {
       await addKey({ key, tier, createdAt: new Date().toISOString() });
       const res = await app.request("/test", { headers: { "X-API-Key": key } });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body = await jsonBody(res);
       expect(body.tier).toBe(tier);
     }
   });
@@ -445,7 +448,7 @@ describe("requireAdmin() middleware", () => {
     const app = buildApp();
     const res = await app.request("/admin");
     expect(res.status).toBe(403);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.error).toBe("FORBIDDEN");
     expect(body.message).toBeDefined();
   });
@@ -462,7 +465,7 @@ describe("requireAdmin() middleware", () => {
       headers: { "X-API-Key": "test-non-admin" },
     });
     expect(res.status).toBe(403);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.error).toBe("FORBIDDEN");
   });
 
@@ -486,7 +489,7 @@ describe("requireAdmin() middleware", () => {
       headers: { "X-API-Key": TEST_ADMIN_KEY },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.ok).toBe(true);
   });
 
@@ -496,7 +499,7 @@ describe("requireAdmin() middleware", () => {
       headers: { Authorization: `Bearer ${TEST_ADMIN_KEY}` },
     });
     expect(res.status).toBe(200);
-    const body = await res.json();
+    const body = await jsonBody(res);
     expect(body.ok).toBe(true);
   });
 

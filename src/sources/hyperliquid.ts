@@ -8,9 +8,9 @@
  *           recent trades, user state (public read).
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestDerivativesSnapshots } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = "https://api.hyperliquid.xyz";
 

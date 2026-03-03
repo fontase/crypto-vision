@@ -24,6 +24,8 @@ import "@/lib/env";
 import { etagMiddleware } from "@/lib/etag";
 import { degradedRouteCount, getDegradedRoutes } from "@/lib/fallback";
 import { circuitBreakerStats, fetchMetrics } from "@/lib/fetcher";
+import { activeWebsocketConnections, registry as metricsRegistry } from "@/lib/metrics";
+import { metricsMiddleware } from "@/lib/metrics-middleware";
 import { globalErrorHandler, requestLogger, requestTimeout } from "@/lib/middleware";
 import { aiQueue, heavyFetchQueue } from "@/lib/queue";
 import { rateLimit } from "@/lib/rate-limit";
@@ -39,13 +41,13 @@ const pkg = JSON.parse(
 ) as { version: string };
 const APP_VERSION = pkg.version;
 
+import { anomalyEngine } from "@/lib/anomaly";
 import { startUpstreams, stopUpstreams, wsStats } from "@/lib/ws";
 import { agentsRoutes } from "@/routes/agents";
 import { aggregateRoutes } from "@/routes/aggregate";
 import { aiRoutes } from "@/routes/ai";
 import { analyticsRoutes } from "@/routes/analytics";
 import { anomalyRoutes } from "@/routes/anomaly";
-import { anomalyEngine } from "@/lib/anomaly";
 
 // Import anomaly processors for side-effects (registers WebSocket broadcast + BigQuery logging handlers)
 import "@/lib/anomaly-processors";
@@ -58,6 +60,7 @@ import { derivativesRoutes } from "@/routes/derivatives";
 import { dexRoutes } from "@/routes/dex";
 import { etfRoutes } from "@/routes/etf";
 import { exchangesRoutes } from "@/routes/exchanges";
+import { exportRoutes } from "@/routes/export";
 import { gasRoutes } from "@/routes/gas";
 import { governanceRoutes } from "@/routes/governance";
 import { keysRoutes } from "@/routes/keys";
@@ -80,7 +83,6 @@ import { stakingRoutes } from "@/routes/staking";
 import { unlocksRoutes } from "@/routes/unlocks";
 import { whaleRoutes } from "@/routes/whales";
 import { createWsRoutes } from "@/routes/ws";
-import { exportRoutes } from "@/routes/export";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -781,9 +783,9 @@ const server = serve(
     void startUpstreams();
 
     // Restore anomaly engine state from cache + start periodic save
-    anomalyEngine.loadState().catch(() => {});
+    anomalyEngine.loadState().catch(() => { });
     setInterval(() => {
-      anomalyEngine.saveState().catch(() => {});
+      anomalyEngine.saveState().catch(() => { });
     }, 300_000); // every 5 minutes
 
     log.info(

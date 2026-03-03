@@ -13,9 +13,9 @@
  */
 
 import { z } from "zod";
-import { fetchJSON } from "../lib/fetcher.js";
+import { ingestBitcoinNetwork, ingestDexPairs, ingestFearGreed } from "../lib/bq-ingest.js";
 import { cache } from "../lib/cache.js";
-import { ingestFearGreed, ingestBitcoinNetwork, ingestDexPairs } from "../lib/bq-ingest.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 // ═══════════════════════════════════════════════════════════════
 // API BASE URLs

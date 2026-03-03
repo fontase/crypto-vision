@@ -5,7 +5,7 @@
  * plus raw fetch for a couple of blockchain.info endpoints.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../lib/fetcher.js", () => ({ fetchJSON: vi.fn() }));
 vi.mock("../../lib/cache.js", () => ({
@@ -14,15 +14,15 @@ vi.mock("../../lib/cache.js", () => ({
 
 import { fetchJSON } from "../../lib/fetcher.js";
 import {
+  getAddressBalance,
+  getBlock,
   getBTCPrice,
   getBTCStats,
-  getAddressBalance,
   getBTCTransaction,
-  getLatestBlockHeight,
-  getBlock,
-  getMempoolStats,
   getDifficultyAdjustment,
+  getLatestBlockHeight,
   getLightningStats,
+  getMempoolStats,
 } from "../bitcoin.js";
 
 const mockFetch = fetchJSON as ReturnType<typeof vi.fn>;

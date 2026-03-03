@@ -13,9 +13,9 @@
  */
 
 import { z } from "zod";
-import { fetchJSON } from "../lib/fetcher.js";
+import { ingestDerivativesSnapshots } from "../lib/bq-ingest.js";
 import { cache } from "../lib/cache.js";
-import { ingestDerivativesSnapshots, ingestOHLCCandles } from "../lib/bq-ingest.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = "https://api.bybit.com/v5";
 

@@ -8,9 +8,9 @@
  *           open interest, instruments list.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestDerivativesSnapshots, ingestOHLCCandles } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = "https://www.okx.com/api/v5";
 

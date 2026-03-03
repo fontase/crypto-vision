@@ -22,6 +22,12 @@ vi.mock("../../lib/cache.js", () => ({
 vi.mock("../../sources/coingecko.js", () => ({
   getCoins: vi.fn(),
   getMarketChart: vi.fn(),
+  getGlobal: vi.fn(),
+  getCategories: vi.fn(),
+}));
+
+vi.mock("../../sources/alternative.js", () => ({
+  getFearGreedIndex: vi.fn(),
 }));
 
 vi.mock("../../sources/cryptocompare.js", () => ({
@@ -55,6 +61,7 @@ vi.mock("../../lib/logger.js", () => ({
 // ─── Import AFTER mocks ─────────────────────────────────────
 
 import * as cg from "../../sources/coingecko.js";
+import * as alt from "../../sources/alternative.js";
 import * as llama from "../../sources/defillama.js";
 import * as l2beat from "../../sources/l2beat.js";
 import * as tt from "../../sources/tokenterminal.js";

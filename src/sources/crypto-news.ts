@@ -6,10 +6,10 @@
  * @see https://github.com/nirholas/free-crypto-news
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
-import { log } from "../lib/logger.js";
 import { ingestNewsArticles } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
+import { log } from "../lib/logger.js";
 
 // ─── RSS Sources ─────────────────────────────────────────────
 

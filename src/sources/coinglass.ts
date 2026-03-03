@@ -8,9 +8,9 @@
  *           long/short ratios, derivatives overview.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestDerivativesSnapshots } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const API = "https://open-api-v3.coinglass.com/api";
 

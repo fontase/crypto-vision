@@ -7,9 +7,9 @@
  *           ERC-20 top holders, and multi-chain EVM gas.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestGasPrices } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 // ─── Multi-Chain Gas Tracking ────────────────────────────────
 

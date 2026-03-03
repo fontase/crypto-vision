@@ -8,6 +8,7 @@
  *           on-chain metrics, fee estimates, and UTXO set analysis.
  */
 
+import { ingestBitcoinNetwork } from "../lib/bq-ingest.js";
 import { cache } from "../lib/cache.js";
 import { fetchJSON } from "../lib/fetcher.js";
 

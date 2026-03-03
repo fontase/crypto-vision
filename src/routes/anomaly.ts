@@ -12,8 +12,8 @@ import {
   anomalyEngine,
   DETECTOR_CONFIGS,
   type AnomalyEvent,
-  type AnomalyType,
   type AnomalyHandler,
+  type AnomalyType,
 } from "../lib/anomaly.js";
 
 export const anomalyRoutes = new Hono();

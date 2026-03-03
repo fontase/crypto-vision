@@ -7,9 +7,9 @@
  *           new pools, token info across 100+ networks.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestDexPairs } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const API = "https://api.geckoterminal.com/api/v2";
 

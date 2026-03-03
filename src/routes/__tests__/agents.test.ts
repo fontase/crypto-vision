@@ -119,6 +119,9 @@ import * as ai from "../../lib/ai.js";
 import { aiQueue, QueueFullError } from "../../lib/queue.js";
 import { agentsRoutes } from "../agents.js";
 
+/** Cast Response.json() to a typed record for test assertions. */
+const jsonBody = (res: Response) => res.json() as Promise<Record<string, any>>;
+
 const app = new Hono().route("/api/agents", agentsRoutes);
 
 beforeEach(() => {
@@ -137,7 +140,7 @@ describe("GET /api/agents", () => {
         const res = await app.request("/api/agents");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data).toBeInstanceOf(Array);
         expect(json.count).toBeGreaterThanOrEqual(2);
         expect(json.aiConfigured).toBe(true);
@@ -158,7 +161,7 @@ describe("GET /api/agents", () => {
         const res = await app.request("/api/agents");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.aiConfigured).toBe(false);
         expect(json.providers).toHaveLength(0);
     });
@@ -173,7 +176,7 @@ describe("GET /api/agents/categories", () => {
         const res = await app.request("/api/agents/categories");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data).toBeInstanceOf(Array);
         expect(json.data.length).toBeGreaterThan(0);
         expect(json.data[0]).toHaveProperty("name");
@@ -191,7 +194,7 @@ describe("GET /api/agents/search", () => {
         const res = await app.request("/api/agents/search?q=test");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data).toBeInstanceOf(Array);
         expect(json.count).toBeGreaterThanOrEqual(1);
         expect(json.query).toBe("test");
@@ -204,7 +207,7 @@ describe("GET /api/agents/search", () => {
         const res = await app.request("/api/agents/search?q=defi");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data.some((a: any) => a.id === "defi-yield-farmer")).toBe(true);
     });
 
@@ -217,7 +220,7 @@ describe("GET /api/agents/search", () => {
         const res = await app.request("/api/agents/search?q=zzzznonexistent");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.count).toBe(0);
         expect(json.data).toHaveLength(0);
     });
@@ -232,7 +235,7 @@ describe("GET /api/agents/:id", () => {
         const res = await app.request("/api/agents/test-agent");
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data.id).toBe("test-agent");
         expect(json.data.title).toBe("Test Agent");
         expect(json.data.description).toBe("A test agent for unit testing");
@@ -269,7 +272,7 @@ describe("POST /api/agents/:id/run", () => {
         });
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data.agent).toBe("test-agent");
         expect(json.data.agentTitle).toBe("Test Agent");
         expect(json.data.response).toContain("Bitcoin");
@@ -365,7 +368,7 @@ describe("POST /api/agents/multi", () => {
         });
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data).toHaveLength(2);
         expect(json.data[0].status).toBe("fulfilled");
         expect(json.data[0].agent).toBe("test-agent");
@@ -416,7 +419,7 @@ describe("POST /api/agents/multi", () => {
         });
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data).toHaveLength(2);
         // One should succeed, one should fail
         const fulfilled = json.data.filter((d: any) => d.status === "fulfilled");
@@ -437,7 +440,7 @@ describe("POST /api/agents/multi", () => {
         });
         expect(res.status).toBe(200);
 
-        const json = await res.json();
+        const json = await jsonBody(res);
         expect(json.data[0].status).toBe("rejected");
         expect(json.data[0].error).toContain("not found");
     });

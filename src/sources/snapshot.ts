@@ -8,9 +8,9 @@
  *           major protocol governance tracking.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestGovernanceProposals } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = "https://hub.snapshot.org/graphql";
 
