@@ -42,13 +42,12 @@ export async function indexAgents(): Promise<number> {
     let indexed = 0;
 
     for (const agent of agents) {
-      const id = `agent:${agent.id || agent.slug || agent.name}`;
+      const id = `agent:${agent.id}`;
       const content = [
-        agent.name,
+        agent.title,
         agent.description || "",
         agent.category || "",
         agent.tags?.join(", ") || "",
-        agent.systemPrompt?.slice(0, 500) || "",
       ].join(" ").trim();
 
       if (!content || content.length < 10) continue;
@@ -57,13 +56,13 @@ export async function indexAgents(): Promise<number> {
         const embedding = await generateEmbedding(content);
         await vectorStore.upsert(id, embedding, content, {
           category: "agent",
-          name: agent.name,
-          slug: agent.slug || agent.id,
+          name: agent.title,
+          agentId: agent.id,
           agentCategory: agent.category,
           tags: agent.tags,
         });
         indexed++;
-      } catch (err) {
+      } catch (err: unknown) {
         log.warn({ err, id }, "Failed to index agent");
       }
     }
@@ -74,7 +73,7 @@ export async function indexAgents(): Promise<number> {
     isRunning = false;
     log.info({ indexed, total: agents.length }, "Agent indexer completed");
     return indexed;
-  } catch (err) {
+  } catch (err: unknown) {
     errorCount++;
     isRunning = false;
     log.error({ err }, "Agent indexer failed");
