@@ -203,7 +203,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --image="gcr.io/${PROJECT}/${SERVICE_NAME}:latest" \
   --region="${REGION}" \
   --platform=managed \
-  --allow-unauthenticated \
+  --no-allow-unauthenticated \
   --port=8080 \
   --memory=1Gi \
   --cpu=2 \

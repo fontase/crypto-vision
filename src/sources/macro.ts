@@ -102,10 +102,10 @@ async function fetchSymbol(symbol: string): Promise<YFQuote | null> {
 
 async function fetchMultiple(keys: SymbolKey[]): Promise<YFQuote[]> {
   const results = await Promise.all(
-    keys.map(async (key) => {
+    keys.map(async (key): Promise<YFQuote | null> => {
       const info = SYMBOLS[key];
       const quote = await fetchSymbol(info.symbol);
-      return quote ? { ...quote, name: info.name } : null;
+      return quote ? { ...quote, name: info.name as string } : null;
     }),
   );
   return results.filter((r): r is YFQuote => r !== null);

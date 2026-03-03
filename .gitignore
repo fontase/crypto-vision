@@ -8,3 +8,15 @@ dist
 coverage
 .vscode
 *.tgz
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+
+# Keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx

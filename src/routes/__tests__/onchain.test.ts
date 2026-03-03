@@ -168,7 +168,7 @@ describe("GET /api/onchain/token/:address", () => {
 
     const json = await res.json();
     expect(json.error).toMatch(/not found/i);
-    expect(json.data).toBeNull();
+    expect(json.data).toBeUndefined();
   });
 
   it("returns 404 when pairs is null", async () => {

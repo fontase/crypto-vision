@@ -101,7 +101,7 @@ jobs:
             --image=gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
             --region=${{ env.REGION }} \
             --platform=managed \
-            --allow-unauthenticated \
+            --no-allow-unauthenticated \
             --port=8080 \
             --memory=1Gi \
             --cpu=2 \
@@ -123,12 +123,13 @@ jobs:
             --format='value(status.url)')
           echo "Service URL: ${SERVICE_URL}"
 
-          # Health check with retries
+          # Authenticated health check with retries (internal service)
+          TOKEN=$(gcloud auth print-identity-token --audiences="${SERVICE_URL}")
           for i in 1 2 3 4 5; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/health" || true)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer ${TOKEN}" "${SERVICE_URL}/health" || true)
             if [ "$STATUS" = "200" ]; then
               echo "✓ Health check passed"
-              curl -s "${SERVICE_URL}/health" | head -c 500
+              curl -s -H "Authorization: Bearer ${TOKEN}" "${SERVICE_URL}/health" | head -c 500
               exit 0
             fi
             echo "Attempt ${i}/5 — status ${STATUS}, retrying in 10s..."

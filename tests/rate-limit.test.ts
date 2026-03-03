@@ -247,6 +247,7 @@ describe("rateLimit middleware", () => {
       const next = vi.fn();
 
       // Custom context with x-forwarded-for containing multiple IPs
+      const vars = new Map<string, unknown>();
       const c = {
         req: {
           header: vi.fn((name: string) => {
@@ -256,12 +257,15 @@ describe("rateLimit middleware", () => {
         },
         header: vi.fn(),
         json: vi.fn(),
+        get: vi.fn((key: string) => vars.get(key)),
+        set: vi.fn((key: string, value: unknown) => { vars.set(key, value); }),
       };
 
       await middleware(c as any, next);
       expect(next).toHaveBeenCalled();
 
       // Second request from same first IP in x-forwarded-for should be blocked
+      const vars2 = new Map<string, unknown>();
       const c2 = {
         req: {
           header: vi.fn((name: string) => {
@@ -271,6 +275,8 @@ describe("rateLimit middleware", () => {
         },
         header: vi.fn(),
         json: vi.fn(),
+        get: vi.fn((key: string) => vars2.get(key)),
+        set: vi.fn((key: string, value: unknown) => { vars2.set(key, value); }),
       };
 
       await middleware(c2 as any, next);
@@ -284,6 +290,7 @@ describe("rateLimit middleware", () => {
       const middleware = rateLimit({ limit: 1, windowSeconds: 60, prefix: "test-realip" });
       const next = vi.fn();
 
+      const vars = new Map<string, unknown>();
       const c = {
         req: {
           header: vi.fn((name: string) => {
@@ -294,6 +301,8 @@ describe("rateLimit middleware", () => {
         },
         header: vi.fn(),
         json: vi.fn(),
+        get: vi.fn((key: string) => vars.get(key)),
+        set: vi.fn((key: string, value: unknown) => { vars.set(key, value); }),
       };
 
       await middleware(c as any, next);

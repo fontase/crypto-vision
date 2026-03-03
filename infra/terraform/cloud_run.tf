@@ -112,14 +112,10 @@ resource "google_cloud_run_v2_service" "app" {
   ]
 }
 
-# Allow unauthenticated access (public API)
-resource "google_cloud_run_v2_service_iam_member" "public" {
-  provider = google-beta
-  name     = google_cloud_run_v2_service.app.name
-  location = google_cloud_run_v2_service.app.location
-  role     = "roles/run.invoker"
-  member   = "allUsers"
-}
+# Internal only — no public access. Callers must present a valid
+# identity token (e.g. Cloud Scheduler OIDC, service-to-service IAM).
+# To grant access to specific accounts:
+#   google_cloud_run_v2_service_iam_member with member = "serviceAccount:..."
 
 # ─── Custom Domain Mapping ───────────────────────────────────
 

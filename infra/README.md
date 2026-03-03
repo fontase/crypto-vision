@@ -239,38 +239,4 @@ gcloud beta run domain-mappings describe \
   --region=us-central1
 ```
 
-## Cost Estimates (Monthly)
 
-| Resource | Estimate |
-|----------|----------|
-| Cloud Run (1 min instance, 2 vCPU, 1Gi) | ~$50–100 |
-| Cloud Run (burst to 20 instances) | ~$500–1,500 |
-| Memorystore Redis (1GB BASIC) | ~$35 |
-| Memorystore Redis (1GB STANDARD_HA) | ~$70 |
-| Cloud Scheduler (7 jobs) | Free tier |
-| Secret Manager (7 secrets) | ~$0.50 |
-| VPC Connector (2 min instances) | ~$15 |
-| Container Registry storage | ~$5 |
-| **Total (steady state)** | **~$100–200/mo** |
-| **Total (high traffic)** | **~$600–1,700/mo** |
-
-With $110k in credits over 6 months, this is well within budget even at peak load.
-
-## Troubleshooting
-
-```bash
-# Check Cloud Run logs
-gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=crypto-vision" --limit=50
-
-# Check Redis connectivity
-gcloud redis instances describe crypto-vision-cache --region=us-central1
-
-# Test scheduler job manually
-gcloud scheduler jobs run refresh-coins --location=us-central1
-
-# Verify secrets
-gcloud secrets versions access latest --secret=REDIS_URL
-
-# Check VPC connector status
-gcloud compute networks vpc-access connectors describe crypto-vision-vpc --region=us-central1
-```

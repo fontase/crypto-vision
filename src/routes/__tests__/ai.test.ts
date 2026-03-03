@@ -157,6 +157,11 @@ describe("GET /api/ai/sentiment/:coin", () => {
   });
 
   it("returns cached result when available", async () => {
+    // Sources are still called before cache check, so mock them
+    vi.mocked(cg.getCoinDetail).mockResolvedValue(mockCoinDetail as any);
+    vi.mocked(cg.getTrending).mockResolvedValue(mockTrending as any);
+    vi.mocked(alt.getFearGreedIndex).mockResolvedValue(mockFearGreed);
+
     const cached = JSON.stringify({
       sentiment: "neutral",
       confidence: 50,
