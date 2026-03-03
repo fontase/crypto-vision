@@ -9,11 +9,54 @@
  * - Heartbeat / ping-pong keep-alive
  * - Per-topic client subscription management
  * - Graceful shutdown
+ * - Per-coin price throttling (5 Hz) — inspired by Pump.fun's approach
+ *   to prevent overwhelming clients with high-frequency ticks
  */
 
 import WebSocket from "ws";
 import { logger } from "@/lib/logger";
 import type { WSContext } from "hono/ws";
+
+// ─── Broadcast Throttling ────────────────────────────────────
+// CoinCap can emit hundreds of ticks/second across all coins.
+// We throttle to PRICE_THROTTLE_HZ per coin so downstream clients
+// (especially mobile) don't burn CPU re-rendering at invisible rates.
+// Ref: https://medium.com/@pumpfun — "How we 10x improved our React Native app startup time"
+
+const PRICE_THROTTLE_HZ = 5;
+const PRICE_THROTTLE_INTERVAL_MS = 1000 / PRICE_THROTTLE_HZ; // 200ms
+
+/** Accumulated latest price per coin, flushed at PRICE_THROTTLE_HZ */
+const pendingPrices = new Map<string, string>();
+let priceFlushTimer: ReturnType<typeof setInterval> | null = null;
+
+function startPriceThrottle(): void {
+  if (priceFlushTimer) return;
+  priceFlushTimer = setInterval(() => {
+    if (pendingPrices.size === 0) return;
+
+    const batch: Record<string, string> = {};
+    for (const [coin, price] of pendingPrices) {
+      batch[coin] = price;
+    }
+    pendingPrices.clear();
+
+    const message: PriceTick = {
+      type: "price",
+      data: batch,
+      timestamp: new Date().toISOString(),
+    };
+    broadcastRaw("prices", JSON.stringify(message));
+  }, PRICE_THROTTLE_INTERVAL_MS);
+}
+
+function stopPriceThrottle(): void {
+  if (priceFlushTimer) {
+    clearInterval(priceFlushTimer);
+    priceFlushTimer = null;
+  }
+  pendingPrices.clear();
+}
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -105,7 +148,31 @@ export function updateClientCoins(
   rebuildPriceSubscription();
 }
 
+/**
+ * Enqueue price ticks into the throttle buffer instead of broadcasting
+ * immediately. For non-price topics, broadcast directly.
+ */
 function broadcast(topic: Topic, message: string): void {
+  if (topic === "prices") {
+    // Accumulate into throttle buffer — latest value wins per coin
+    try {
+      const parsed = JSON.parse(message) as PriceTick;
+      for (const [coin, price] of Object.entries(parsed.data)) {
+        pendingPrices.set(coin, price);
+      }
+    } catch {
+      // Ignore malformed price messages
+    }
+    return;
+  }
+  broadcastRaw(topic, message);
+}
+
+/**
+ * Send a message to all clients subscribed to a topic.
+ * Price messages are filtered to only include coins each client subscribed to.
+ */
+function broadcastRaw(topic: Topic, message: string): void {
   const topicClients = clients.get(topic);
   if (!topicClients) return;
 

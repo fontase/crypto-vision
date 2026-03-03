@@ -135,6 +135,9 @@ describe("fetchJSON", () => {
 
       await expect(promise).rejects.toThrow("persistent failure");
       expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+
+      // Flush any remaining timer callbacks / microtasks to avoid unhandled rejection warnings
+      await vi.runAllTimersAsync();
     });
 
     it("does not retry when retries is 0", async () => {
@@ -156,14 +159,20 @@ describe("fetchJSON", () => {
 
   describe("timeout", () => {
     it("aborts request after timeout", async () => {
-      // Simulate a fetch that never resolves until aborted
+      // Track the abort rejection so it doesn't become unhandled
+      let abortReject: ((reason: unknown) => void) | null = null;
       globalThis.fetch = vi.fn().mockImplementation(
-        (_url: string, init: RequestInit) =>
-          new Promise((_resolve, reject) => {
+        (_url: string, init: RequestInit) => {
+          const p = new Promise((_resolve, reject) => {
+            abortReject = reject;
             init.signal?.addEventListener("abort", () => {
               reject(new DOMException("The operation was aborted.", "AbortError"));
             });
-          }),
+          });
+          // Suppress unhandled rejection for the mock promise
+          p.catch(() => {});
+          return p;
+        },
       );
 
       const promise = fetchJSON("https://api.slow.com/data", {

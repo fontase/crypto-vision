@@ -42,6 +42,12 @@ import { keysRoutes } from "@/routes/keys";
 import { cexRoutes } from "@/routes/cex";
 import { analyticsRoutes } from "@/routes/analytics";
 import { agentsRoutes } from "@/routes/agents";
+import { perpsRoutes } from "@/routes/perps";
+import { governanceRoutes } from "@/routes/governance";
+import { macroRoutes } from "@/routes/macro";
+import { solanaRoutes } from "@/routes/solana";
+import { depinRoutes } from "@/routes/depin";
+import { exchangesRoutes } from "@/routes/exchanges";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -351,6 +357,67 @@ app.get("/api", (c) =>
         "GET /api/analytics/l2": "Layer 2 comparison data",
         "GET /api/analytics/revenue": "Protocol revenue rankings",
       },
+      perps: {
+        "GET /api/perps/overview": "Cross-exchange perps overview (Bybit/OKX/Hyperliquid/dYdX)",
+        "GET /api/perps/funding": "Cross-exchange funding rates (sorted by extremes)",
+        "GET /api/perps/funding/:symbol": "Funding rate history for one asset across exchanges",
+        "GET /api/perps/oi": "Open interest overview (multi-exchange)",
+        "GET /api/perps/oi/:symbol": "Open interest for one asset across exchanges",
+        "GET /api/perps/markets": "Hyperliquid perpetual markets",
+        "GET /api/perps/markets/dydx": "dYdX v4 markets",
+        "GET /api/perps/markets/bybit": "Bybit linear perpetual tickers",
+        "GET /api/perps/markets/okx": "OKX swap tickers",
+        "GET /api/perps/orderbook/:exchange/:symbol": "Orderbook (bybit/okx/dydx/deribit)",
+        "GET /api/perps/trades/:exchange/:symbol": "Recent trades (bybit/dydx/hyperliquid)",
+        "GET /api/perps/klines/:exchange/:symbol": "Klines/candles (bybit/okx/dydx)",
+        "GET /api/perps/options/:currency": "Options chain summary (Deribit)",
+        "GET /api/perps/volatility/:currency": "Implied + historical volatility (Deribit)",
+        "GET /api/perps/dydx/sparklines": "dYdX sparkline charts",
+        "GET /api/perps/hl/user/:address": "Hyperliquid user positions + open orders",
+      },
+      governance: {
+        "GET /api/governance/proposals/:space": "DAO proposals (Snapshot)",
+        "GET /api/governance/active": "Active proposals across 12 major DAOs",
+        "GET /api/governance/spaces": "Popular DAO spaces",
+        "GET /api/governance/space/:id": "Space detail",
+        "GET /api/governance/votes/:proposalId": "Votes on a proposal",
+        "GET /api/governance/search": "Search DAO spaces (?q=...)",
+      },
+      macro: {
+        "GET /api/macro/overview": "Full macro dashboard (indices, commodities, bonds, VIX, DXY)",
+        "GET /api/macro/indices": "Stock market indices (S&P500, NASDAQ, Dow, Russell)",
+        "GET /api/macro/commodities": "Gold, silver, oil, natural gas prices",
+        "GET /api/macro/bonds": "Treasury yields (2Y, 5Y, 10Y, 30Y)",
+        "GET /api/macro/vix": "CBOE Volatility Index",
+        "GET /api/macro/dxy": "US Dollar Index",
+        "GET /api/macro/crypto": "BTC, ETH, SOL, BNB price benchmarks",
+        "GET /api/macro/quote/:symbol": "Raw Yahoo Finance quote for any symbol",
+      },
+      solana: {
+        "GET /api/solana/price/:token": "Jupiter price for a token mint/symbol",
+        "GET /api/solana/prices": "Batch prices (?ids=mint1,mint2)",
+        "GET /api/solana/quote": "Jupiter swap quote (?inputMint=&outputMint=&amount=)",
+        "GET /api/solana/tokens": "Full Solana token list",
+        "GET /api/solana/tokens/popular": "Popular tokens by volume",
+        "GET /api/solana/search": "Search tokens (?q=...)",
+      },
+      depin: {
+        "GET /api/depin/projects": "All DePIN projects",
+        "GET /api/depin/project/:slug": "Single DePIN project detail",
+        "GET /api/depin/categories": "DePIN project categories",
+        "GET /api/depin/metrics": "Aggregate DePIN metrics",
+      },
+      exchanges: {
+        "GET /api/exchanges/list": "Ranked exchange list (CoinCap)",
+        "GET /api/exchanges/:id": "Single exchange detail",
+        "GET /api/exchanges/:id/markets": "Markets on an exchange",
+        "GET /api/exchanges/rates": "Conversion rates (fiat + crypto)",
+        "GET /api/exchanges/rates/:id": "Single conversion rate",
+        "GET /api/exchanges/bybit/insurance": "Bybit insurance fund (?coin=BTC)",
+        "GET /api/exchanges/bybit/risk-limit": "Bybit risk limits (?symbol=BTCUSDT)",
+        "GET /api/exchanges/deribit/index": "Deribit index prices (?currency=BTC)",
+        "GET /api/exchanges/coincap/candles": "Exchange candles (?exchange=binance&base=bitcoin&quote=tether)",
+      },
       keys: {
         "POST /api/keys": "Generate new API key (admin)",
         "GET /api/keys/usage": "Usage stats for current key",
@@ -383,6 +450,12 @@ app.route("/api/gas", gasRoutes);
 app.route("/api/research", researchRoutes);
 app.route("/api/aggregate", aggregateRoutes);
 app.route("/api/agents", agentsRoutes);
+app.route("/api/perps", perpsRoutes);
+app.route("/api/governance", governanceRoutes);
+app.route("/api/macro", macroRoutes);
+app.route("/api/solana", solanaRoutes);
+app.route("/api/depin", depinRoutes);
+app.route("/api/exchanges", exchangesRoutes);
 app.route("/", keysRoutes);
 
 // ─── 404 Fallback ────────────────────────────────────────────

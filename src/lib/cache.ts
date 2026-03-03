@@ -10,12 +10,14 @@
  *  - Stale-while-revalidate: serve stale data while refreshing in background
  *  - Graceful degradation: memory-only if Redis is down
  *  - Batch eviction for efficiency under high load
+ *  - Uses shared Redis connection from lib/redis.ts (prevents connection exhaustion)
  *
  * Every upstream call goes through cache.wrap() so we never
  * hammer free-tier APIs and stay well within rate limits.
  */
 
 import { logger } from "./logger.js";
+import { getRedis, isRedisConnected, disconnectRedis } from "./redis.js";
 
 // ─── In-Memory LRU ──────────────────────────────────────────
 
@@ -63,34 +65,6 @@ class MemoryCache {
   delete(key: string): void { this.store.delete(key); }
   clear(): void { this.store.clear(); }
   get size(): number { return this.store.size; }
-}
-
-// ─── Redis (optional — graceful fallback to memory-only) ─────
-
-let redis: import("ioredis").default | null = null;
-
-async function getRedis() {
-  if (redis) return redis;
-  const url = process.env.REDIS_URL;
-  if (!url) return null;
-
-  try {
-    const { default: Redis } = await import("ioredis");
-    redis = new Redis(url, {
-      maxRetriesPerRequest: 2,
-      connectTimeout: 3000,
-      lazyConnect: true,
-      enableReadyCheck: true,
-      enableOfflineQueue: true,
-    });
-    await redis.connect();
-    logger.info("Redis connected");
-    redis.on("error", (err) => logger.warn({ err: err.message }, "Redis error"));
-    return redis;
-  } catch (err) {
-    logger.warn({ err }, "Redis unavailable — memory-only caching");
-    return null;
-  }
 }
 
 // ─── Single-Flight (Cache Stampede Protection) ───────────────
@@ -207,16 +181,13 @@ export const cache = {
     return {
       memoryEntries: mem.size,
       memoryMaxSize: 50_000,
-      redisConnected: redis !== null,
+      redisConnected: isRedisConnected(),
       inflightRequests: inflight.size,
     };
   },
 
   /** Disconnect Redis for graceful shutdown. */
   async disconnect(): Promise<void> {
-    if (redis) {
-      try { await redis.quit(); } catch { /* best-effort */ }
-      redis = null;
-    }
+    await disconnectRedis();
   },
 };

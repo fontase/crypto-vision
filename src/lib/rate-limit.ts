@@ -5,12 +5,16 @@
  *  1. Redis (shared across all instances — production default)
  *  2. In-memory fallback (single-instance, dev/CI)
  *
+ * Uses shared Redis connection from lib/redis.ts to prevent
+ * connection exhaustion at scale (500+ Cloud Run instances).
+ *
  * Redis uses a Lua script for atomic increment + TTL so
  * multiple pods never race on the same counter.
  */
 
 import type { Context, Next } from "hono";
 import { logger } from "./logger.js";
+import { getRedis } from "./redis.js";
 import { TIER_LIMITS, type ApiTier } from "./auth.js";
 
 // ─── In-Memory Backend ───────────────────────────────────────
@@ -47,33 +51,11 @@ local ttl = redis.call('PTTL', key)
 return {count, ttl}
 `;
 
-let redis: import("ioredis").default | null = null;
-let redisOk = false;
-
-async function initRedisRL() {
-  if (redis) return redis;
-  const url = process.env.REDIS_URL;
-  if (!url) return null;
-  try {
-    const { default: Redis } = await import("ioredis");
-    redis = new Redis(url, { maxRetriesPerRequest: 1, connectTimeout: 2000, lazyConnect: true, enableReadyCheck: true });
-    await redis.connect();
-    redisOk = true;
-    logger.info("Rate-limiter: Redis connected");
-    redis.on("error", () => { redisOk = false; });
-    redis.on("ready", () => { redisOk = true; });
-    return redis;
-  } catch {
-    logger.warn("Rate-limiter: Redis unavailable — using in-memory");
-    return null;
-  }
-}
-void initRedisRL();
-
 async function incrementRedis(key: string, windowMs: number) {
-  if (!redis || !redisOk) return null;
+  const r = await getRedis();
+  if (!r) return null;
   try {
-    const [count, ttl] = (await redis.eval(REDIS_INCR_LUA, 1, key, windowMs)) as [number, number];
+    const [count, ttl] = (await r.eval(REDIS_INCR_LUA, 1, key, windowMs)) as [number, number];
     return { count, resetAt: Date.now() + Math.max(ttl, 0) };
   } catch { return null; }
 }

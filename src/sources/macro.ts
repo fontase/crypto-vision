@@ -105,7 +105,9 @@ async function fetchMultiple(keys: SymbolKey[]): Promise<YFQuote[]> {
     keys.map(async (key): Promise<YFQuote | null> => {
       const info = SYMBOLS[key];
       const quote = await fetchSymbol(info.symbol);
-      return quote ? { ...quote, name: info.name as string } : null;
+      if (!quote) return null;
+      const named: YFQuote = { ...quote, name: info.name as string };
+      return named;
     }),
   );
   return results.filter((r): r is YFQuote => r !== null);
