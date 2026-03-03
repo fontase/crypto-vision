@@ -350,13 +350,11 @@ analyticsRoutes.get("/tt/projects", async (c) => {
   const data = await tt.getProjects();
 
   return c.json({
-    data: (data.data || []).map((p: any) => ({
+    data: (data.data || []).map((p) => ({
       id: p.project_id,
-      name: p.project_name,
+      name: p.name,
       symbol: p.symbol,
       category: p.category,
-      chains: p.chains,
-      logo: p.logo,
     })),
     count: data.data?.length || 0,
     source: "tokenterminal",
@@ -420,7 +418,7 @@ analyticsRoutes.get("/tt/market/:metric", async (c) => {
   return c.json({
     data: {
       metricId: data.metric_id,
-      values: (data.data || []).map((v: any) => ({
+      values: (data.data || []).map((v) => ({
         timestamp: v.timestamp,
         value: v.value,
       })),

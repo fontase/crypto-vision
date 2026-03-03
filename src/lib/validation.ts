@@ -184,6 +184,127 @@ export const PythPriceIdsSchema = z.object({
     .max(100, "maximum 100 feed IDs per request"),
 });
 
+// ─── AI Chat & Analysis Schemas ──────────────────────────────
+
+/** AI chat with crypto context */
+export const AIChatSchema = z.object({
+  message: z
+    .string()
+    .min(1, "message is required")
+    .max(4000, "message too long (max 4000 chars)"),
+  context: z
+    .enum(["market", "defi", "technical", "general"])
+    .default("general"),
+  model: z.string().max(128).optional(),
+  conversationId: z.string().max(128).optional(),
+});
+
+/** AI market analysis */
+export const AIAnalyzeSchema = z.object({
+  topic: z
+    .string()
+    .min(1, "topic is required")
+    .max(256, "topic too long (max 256 chars)"),
+  coin: z.string().max(128).optional(),
+  depth: z.enum(["quick", "standard", "deep"]).default("standard"),
+});
+
+/** AI summarize articles/news */
+export const AISummarizeSchema = z.object({
+  text: z
+    .string()
+    .min(10, "text must be at least 10 characters")
+    .max(16_000, "text too long (max 16000 chars)"),
+  format: z.enum(["bullets", "paragraph", "tldr"]).default("bullets"),
+  maxLength: z.number().int().min(50).max(2000).optional(),
+});
+
+/** AI sentiment analysis (POST body) */
+export const AISentimentSchema = z.object({
+  text: z
+    .string()
+    .min(1, "text is required")
+    .max(8000, "text too long (max 8000 chars)"),
+  coins: z.array(z.string().max(128)).max(10).optional(),
+});
+
+/** AI trading/DeFi strategy */
+export const AIStrategySchema = z.object({
+  goal: z
+    .string()
+    .min(1, "goal is required")
+    .max(1000, "goal too long (max 1000 chars)"),
+  riskTolerance: z.enum(["conservative", "moderate", "aggressive"]).default("moderate"),
+  timeHorizon: z.enum(["short", "medium", "long"]).default("medium"),
+  budget: z.string().max(64).optional(),
+  holdings: z.array(z.string().max(128)).max(20).optional(),
+});
+
+/** AI explain (POST version) */
+export const AIExplainSchema = z.object({
+  topic: z
+    .string()
+    .min(1, "topic is required")
+    .max(256, "topic too long (max 256 chars)"),
+  level: z.enum(["beginner", "intermediate", "advanced"]).default("beginner"),
+});
+
+/** AI embed (text embedding generation) */
+export const AIEmbedSchema = z.object({
+  texts: z
+    .array(z.string().min(1).max(8192))
+    .min(1, "at least one text required")
+    .max(100, "maximum 100 texts per request"),
+});
+
+/** AI compare (POST version) */
+export const AICompareSchema = z.object({
+  items: z
+    .array(z.string().min(1).max(128))
+    .min(2, "at least 2 items required")
+    .max(5, "maximum 5 items"),
+  type: z.enum(["tokens", "protocols", "chains"]).default("tokens"),
+});
+
+/** AI risk assessment (POST) */
+export const AIRiskAssessmentSchema = z.object({
+  target: z
+    .string()
+    .min(1, "target is required")
+    .max(256, "target too long (max 256 chars)"),
+  type: z.enum(["protocol", "token", "portfolio", "strategy"]).default("token"),
+  context: z.string().max(4000).optional(),
+});
+
+/** AI portfolio review (POST) */
+export const AIPortfolioReviewSchema = z.object({
+  holdings: z
+    .array(
+      z.object({
+        asset: z.string().min(1).max(128),
+        allocation: z.number().min(0).max(100),
+      }),
+    )
+    .min(1, "at least one holding required")
+    .max(50, "maximum 50 holdings"),
+  totalValue: z.string().max(64).optional(),
+  goal: z.string().max(256).optional(),
+});
+
+/** Agent composition pipeline */
+export const AgentComposeSchema = z.object({
+  pipeline: z
+    .array(
+      z.object({
+        agentId: z.string().min(1).max(128),
+        inputMapping: z.record(z.string(), z.string()).optional(),
+      }),
+    )
+    .min(2, "pipeline must have at least 2 agents")
+    .max(5, "pipeline can have at most 5 agents"),
+  input: z.record(z.string(), z.unknown()),
+});
+
 // ─── Validation Helper ──────────────────────────────────────
 
 /**

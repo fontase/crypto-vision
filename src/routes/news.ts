@@ -78,9 +78,9 @@ newsRoutes.get("/", async (c) => {
           const data = await getNews({ limit, source, category, page });
           return {
             articles: data.articles.map((a) => ({
-              id: (a as Record<string, unknown>).id as string | undefined,
+              id: (a as unknown as Record<string, unknown>).id as string | undefined,
               title: a.title,
-              description: (a as Record<string, unknown>).description as string | undefined,
+              description: (a as unknown as Record<string, unknown>).description as string | undefined,
               url: a.url,
               source: a.source,
               sourceName: a.sourceName,

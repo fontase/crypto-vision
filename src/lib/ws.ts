@@ -238,6 +238,7 @@ const PUBSUB_CHANNELS = {
   prices: "cv:ws:ch:prices",
   bitcoin: "cv:ws:ch:bitcoin",
   trades: "cv:ws:ch:trades",
+  alerts: "cv:ws:ch:alerts",
 } as const;
 
 let isLeader = false;
@@ -327,6 +328,7 @@ async function subscribeToChannels(): Promise<void> {
       PUBSUB_CHANNELS.prices,
       PUBSUB_CHANNELS.bitcoin,
       PUBSUB_CHANNELS.trades,
+      PUBSUB_CHANNELS.alerts,
     );
 
     sub.on("message", (channel: string, message: string) => {
@@ -820,6 +822,7 @@ export function wsStats(): {
       prices: clients.get("prices")!.size,
       bitcoin: clients.get("bitcoin")!.size,
       trades: clients.get("trades")!.size,
+      alerts: clients.get("alerts")?.size ?? 0,
     },
     upstreams: {
       coinCap: coinCapAuthFailed

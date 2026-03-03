@@ -42,6 +42,16 @@ function safeStr(v: unknown): string | null {
   return String(v);
 }
 
+/** Safely cast typed rows to the Record<string, unknown>[] that BigQuery expects. */
+function asRows(rows: unknown): Record<string, unknown>[] {
+  return rows as Record<string, unknown>[];
+}
+
+/** Single-row variant. */
+function asRow(row: unknown): Record<string, unknown> {
+  return row as Record<string, unknown>;
+}
+
 // ── Market Snapshots (CoinGecko) ─────────────────────────
 
 export function ingestMarketSnapshots(coins: Array<Record<string, unknown>>): void {
@@ -65,7 +75,7 @@ export function ingestMarketSnapshots(coins: Array<Record<string, unknown>>): vo
     ath_change_pct: safeNum(c.ath_change_percentage),
     source: "coingecko",
   }));
-  insertRows(Tables.MARKET_SNAPSHOTS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.MARKET_SNAPSHOTS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── OHLC Candles ─────────────────────────────────────────
@@ -85,7 +95,7 @@ export function ingestOHLCCandles(
     volume: null,
     source,
   }));
-  insertRows(Tables.OHLC_CANDLES, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.OHLC_CANDLES, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── DeFi Protocols (DeFiLlama) ───────────────────────────
@@ -105,7 +115,7 @@ export function ingestDefiProtocols(protocols: Array<Record<string, unknown>>): 
     revenue_24h: safeNum(p.revenue_24h),
     source: "defillama",
   }));
-  insertRows(Tables.DEFI_PROTOCOLS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.DEFI_PROTOCOLS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Yield Pools (DeFiLlama) ──────────────────────────────
@@ -123,7 +133,7 @@ export function ingestYieldPools(pools: Array<Record<string, unknown>>): void {
     il_risk: safeStr(p.ilRisk),
     stablecoin: p.stablecoin === true || p.stablecoin === "true" ? true : false,
   }));
-  insertRows(Tables.YIELD_POOLS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.YIELD_POOLS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── News Articles ────────────────────────────────────────
@@ -142,7 +152,7 @@ export function ingestNewsArticles(articles: Array<Record<string, unknown>>): vo
     entities: Array.isArray(a.entities) ? a.entities.map(String) : [],
     topics: Array.isArray(a.topics) ? a.topics.map(String) : [],
   }));
-  insertRows(Tables.NEWS_ARTICLES, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.NEWS_ARTICLES, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Fear & Greed Index ───────────────────────────────────
@@ -153,7 +163,7 @@ export function ingestFearGreed(data: Array<Record<string, unknown>>): void {
     classification: safeStr(d.value_classification),
     timestamp_unix: safeNum(d.timestamp),
   }));
-  insertRows(Tables.FEAR_GREED, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.FEAR_GREED, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── DEX Pairs ────────────────────────────────────────────
@@ -194,7 +204,7 @@ export function ingestDexPairs(pairs: Array<Record<string, unknown>>, source: st
     fdv: safeNum(p.fdv),
     source,
   }));
-  insertRows(Tables.DEX_PAIRS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.DEX_PAIRS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Chain TVL ────────────────────────────────────────────
@@ -205,7 +215,7 @@ export function ingestChainTVL(chains: Array<Record<string, unknown>>): void {
     tvl_usd: safeNum(c.tvl),
     protocols_count: safeNum(c.protocols),
   }));
-  insertRows(Tables.CHAIN_TVL, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.CHAIN_TVL, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Exchange Snapshots ───────────────────────────────────
@@ -223,7 +233,7 @@ export function ingestExchangeSnapshots(
     open_interest_usd: safeNum(e.open_interest_usd),
     source,
   }));
-  insertRows(Tables.EXCHANGE_SNAPSHOTS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.EXCHANGE_SNAPSHOTS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Bitcoin Network ──────────────────────────────────────
@@ -238,7 +248,7 @@ export function ingestBitcoinNetwork(data: Record<string, unknown>): void {
     fee_slow_sat_vb: safeNum(data.fee_slow || data.hourFee),
     mempool_size: safeNum(data.mempool_size || data.count),
   };
-  insertRows(Tables.BITCOIN_NETWORK, [row as Record<string, unknown>]).catch(() => {});
+  insertRows(Tables.BITCOIN_NETWORK, [row as unknown as Record<string, unknown>]).catch(() => {});
 }
 
 // ── Gas Prices ───────────────────────────────────────────
@@ -251,7 +261,7 @@ export function ingestGasPrices(gasData: Array<Record<string, unknown>>): void {
     slow_gwei: safeNum(g.slow || g.slow_gwei || g.SafeGasPrice || g.low),
     base_fee_gwei: safeNum(g.base_fee || g.base_fee_gwei || g.suggestBaseFee),
   }));
-  insertRows(Tables.GAS_PRICES, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.GAS_PRICES, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Stablecoin Supply ────────────────────────────────────
@@ -266,7 +276,7 @@ export function ingestStablecoinSupply(stables: Array<Record<string, unknown>>):
     chain_circulating: (s.chainCirculating || s.chain_circulating) as Record<string, unknown> | null ?? null,
     price: safeNum(s.price),
   }));
-  insertRows(Tables.STABLECOIN_SUPPLY, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.STABLECOIN_SUPPLY, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Funding Rounds ───────────────────────────────────────
@@ -285,7 +295,7 @@ export function ingestFundingRounds(rounds: Array<Record<string, unknown>>): voi
         : [],
     date: safeStr(r.date),
   }));
-  insertRows(Tables.FUNDING_ROUNDS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.FUNDING_ROUNDS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Derivatives Snapshots ────────────────────────────────
@@ -304,7 +314,7 @@ export function ingestDerivativesSnapshots(
     liquidations_24h: safeNum(d.liquidations || d.liquidations_24h),
     source,
   }));
-  insertRows(Tables.DERIVATIVES_SNAPSHOTS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.DERIVATIVES_SNAPSHOTS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Governance Proposals ─────────────────────────────────
@@ -323,7 +333,7 @@ export function ingestGovernanceProposals(proposals: Array<Record<string, unknow
     start_ts: safeNum(p.start),
     end_ts: safeNum(p.end),
   }));
-  insertRows(Tables.GOVERNANCE_PROPOSALS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.GOVERNANCE_PROPOSALS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Whale Movements ──────────────────────────────────────
@@ -341,7 +351,7 @@ export function ingestWhaleMovements(movements: Array<Record<string, unknown>>):
     timestamp_unix: safeNum(m.timestamp || m.timeStamp),
     movement_type: safeStr(m.movement_type || m.type),
   }));
-  insertRows(Tables.WHALE_MOVEMENTS, rows as Record<string, unknown>[]).catch(() => {});
+  insertRows(Tables.WHALE_MOVEMENTS, rows as unknown as Record<string, unknown>[]).catch(() => {});
 }
 
 // ── Agent Interactions ───────────────────────────────────
@@ -366,5 +376,5 @@ export function ingestAgentInteraction(data: {
     latency_ms: data.latency_ms ?? null,
     user_feedback: data.user_feedback ?? null,
   };
-  insertRows(Tables.AGENT_INTERACTIONS, [row as Record<string, unknown>]).catch(() => {});
+  insertRows(Tables.AGENT_INTERACTIONS, [row as unknown as Record<string, unknown>]).catch(() => {});
 }

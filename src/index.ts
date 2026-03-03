@@ -23,7 +23,8 @@ import { rateLimit } from "@/lib/rate-limit";
 import { ApiError } from "@/lib/api-error";
 import { requestLogger, globalErrorHandler, requestTimeout } from "@/lib/middleware";
 import { apiKeyAuth } from "@/lib/auth";
-import { circuitBreakerStats } from "@/lib/fetcher";
+import { circuitBreakerStats, fetchMetrics } from "@/lib/fetcher";
+import { getDegradedRoutes, degradedRouteCount } from "@/lib/fallback";
 import { aiQueue, heavyFetchQueue } from "@/lib/queue";
 import { etagMiddleware } from "@/lib/etag";
 import { responseEnvelope } from "@/lib/response-envelope";
@@ -143,8 +144,10 @@ app.get("/health", async (c) => {
   const cacheStats = cache.stats();
   const cbs = circuitBreakerStats();
   const openCircuits = Object.values(cbs).filter((b) => b.state === "open").length;
-  const degraded = !cacheStats.redisConnected && !!process.env.REDIS_URL;
-  const healthy = !degraded && openCircuits === 0;
+  const degradedSources = getDegradedRoutes();
+  const degradedCount = degradedRouteCount();
+  const redisDown = !cacheStats.redisConnected && !!process.env.REDIS_URL;
+  const healthy = !redisDown && openCircuits === 0 && degradedCount === 0;
 
   return c.json(
     {
@@ -153,6 +156,8 @@ app.get("/health", async (c) => {
       timestamp: new Date().toISOString(),
       cache: cacheStats,
       circuitBreakers: cbs,
+      degradedRoutes: degradedSources,
+      degradedRouteCount: degradedCount,
       queues: {
         ai: aiQueue.stats(),
         heavyFetch: heavyFetchQueue.stats(),
@@ -162,6 +167,7 @@ app.get("/health", async (c) => {
         rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
         heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
       },
+      fetchMetrics: fetchMetrics(),
       env: process.env.NODE_ENV || "development",
     },
     healthy ? 200 : 503,

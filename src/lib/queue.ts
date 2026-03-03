@@ -21,6 +21,19 @@ export interface QueueConfig {
   timeout: number;
 }
 
+export interface QueueMetrics {
+  /** Total tasks executed successfully */
+  totalExecuted: number;
+  /** Total tasks rejected (queue full) */
+  totalRejected: number;
+  /** Total tasks that timed out */
+  totalTimedOut: number;
+  /** Cumulative wait time in ms (divide by totalExecuted for avg) */
+  totalWaitMs: number;
+  /** Peak concurrent tasks observed */
+  peakConcurrent: number;
+}
+
 export class RequestQueue {
   private running = 0;
   private queue: Array<{
@@ -29,8 +42,17 @@ export class RequestQueue {
     enqueued: number;
   }> = [];
   private config: QueueConfig;
+  readonly name: string;
+  private metrics: QueueMetrics = {
+    totalExecuted: 0,
+    totalRejected: 0,
+    totalTimedOut: 0,
+    totalWaitMs: 0,
+    peakConcurrent: 0,
+  };
 
-  constructor(config: Partial<QueueConfig> = {}) {
+  constructor(config: Partial<QueueConfig> & { name?: string } = {}) {
+    this.name = config.name ?? "unnamed";
     this.config = {
       concurrency: config.concurrency ?? 10,
       maxQueue: config.maxQueue ?? 500,
@@ -43,20 +65,33 @@ export class RequestQueue {
    * Waits in queue if at capacity. Rejects if queue is full.
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
+    const waitStart = Date.now();
     await this.acquire();
+    this.metrics.totalWaitMs += Date.now() - waitStart;
+    if (this.running > this.metrics.peakConcurrent) {
+      this.metrics.peakConcurrent = this.running;
+    }
 
     try {
       // Wrap with timeout
       const result = await Promise.race([
         fn(),
-        new Promise<never>((_, reject) =>
-          setTimeout(
+        new Promise<never>((_, reject) => {
+          const timer = setTimeout(
             () => reject(new Error("Queue task timeout")),
             this.config.timeout,
-          ),
-        ),
+          );
+          // Prevent timer from keeping the process alive
+          if (typeof timer === "object" && "unref" in timer) timer.unref();
+        }),
       ]);
+      this.metrics.totalExecuted++;
       return result;
+    } catch (err) {
+      if (err instanceof Error && err.message === "Queue task timeout") {
+        this.metrics.totalTimedOut++;
+      }
+      throw err;
     } finally {
       this.release();
     }
@@ -69,6 +104,7 @@ export class RequestQueue {
     }
 
     if (this.queue.length >= this.config.maxQueue) {
+      this.metrics.totalRejected++;
       throw new QueueFullError(this.config.maxQueue);
     }
 
@@ -94,11 +130,20 @@ export class RequestQueue {
 
   /** Stats for monitoring */
   stats() {
+    const avgWaitMs = this.metrics.totalExecuted > 0
+      ? Math.round(this.metrics.totalWaitMs / this.metrics.totalExecuted)
+      : 0;
     return {
+      name: this.name,
       running: this.running,
       queued: this.queue.length,
       concurrency: this.config.concurrency,
       maxQueue: this.config.maxQueue,
+      totalExecuted: this.metrics.totalExecuted,
+      totalRejected: this.metrics.totalRejected,
+      totalTimedOut: this.metrics.totalTimedOut,
+      avgWaitMs,
+      peakConcurrent: this.metrics.peakConcurrent,
     };
   }
 }
@@ -115,15 +160,17 @@ export class QueueFullError extends Error {
 
 /** Queue for AI/LLM operations — most expensive */
 export const aiQueue = new RequestQueue({
-  concurrency: Number(process.env.AI_CONCURRENCY || 10),
-  maxQueue: Number(process.env.AI_MAX_QUEUE || 500),
-  timeout: 30_000,
+  name: "ai",
+  concurrency: Number(process.env.AI_CONCURRENCY || 50),
+  maxQueue: Number(process.env.AI_MAX_QUEUE || 2000),
+  timeout: 60_000,
 });
 
 /** Queue for heavy upstream fetches (e.g. DeFiLlama protocols list) */
 export const heavyFetchQueue = new RequestQueue({
-  concurrency: Number(process.env.HEAVY_FETCH_CONCURRENCY || 20),
-  maxQueue: 1000,
+  name: "heavyFetch",
+  concurrency: Number(process.env.HEAVY_FETCH_CONCURRENCY || 40),
+  maxQueue: 2000,
   timeout: 15_000,
 });
 

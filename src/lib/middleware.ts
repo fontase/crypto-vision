@@ -1,7 +1,8 @@
 /**
  * Crypto Vision — Middleware
  *
- * Reusable Hono middleware for request logging and error handling.
+ * Reusable Hono middleware for request logging, error handling,
+ * and security hardening.
  *
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
@@ -19,6 +20,8 @@ import { FetchError } from "./fetcher.js";
  * Logs method, path, status, and duration for every request.
  * Uses different log levels based on response status:
  *   2xx/3xx → info, 4xx → warn, 5xx → error
+ *
+ * Adds Server-Timing header for observability (latency visible in DevTools).
  */
 export const requestLogger: MiddlewareHandler = async (c, next) => {
   const start = Date.now();
@@ -31,6 +34,9 @@ export const requestLogger: MiddlewareHandler = async (c, next) => {
   const ms = Date.now() - start;
   const requestId = c.req.header("x-request-id") ?? c.get("requestId") ?? "-";
 
+  // Server-Timing — visible in browser DevTools Network tab and CDN logs
+  c.res.headers.set("Server-Timing", `total;dur=${ms}`);
+
   const payload = { method, path, status, ms, requestId };
   const line = `${method} ${path} ${status} ${ms}ms`;
 
@@ -38,6 +44,9 @@ export const requestLogger: MiddlewareHandler = async (c, next) => {
     logger.error(payload, line);
   } else if (status >= 400) {
     logger.warn(payload, line);
+  } else if (ms > 5000) {
+    // Slow request warning — anything over 5s
+    logger.warn({ ...payload, slow: true }, `SLOW ${line}`);
   } else {
     logger.info(payload, line);
   }

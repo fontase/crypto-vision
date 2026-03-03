@@ -12,6 +12,35 @@
 
 import { logger } from "./logger.js";
 
+// ─── Fetch Metrics ───────────────────────────────────────────
+
+interface HostMetrics {
+  totalRequests: number;
+  totalFailures: number;
+  total429s: number;
+  totalLatencyMs: number;
+  minLatencyMs: number;
+  maxLatencyMs: number;
+}
+
+const hostMetrics = new Map<string, HostMetrics>();
+
+function getHostMetrics(host: string): HostMetrics {
+  let m = hostMetrics.get(host);
+  if (!m) {
+    m = { totalRequests: 0, totalFailures: 0, total429s: 0, totalLatencyMs: 0, minLatencyMs: Infinity, maxLatencyMs: 0 };
+    hostMetrics.set(host, m);
+  }
+  return m;
+}
+
+function recordLatency(host: string, ms: number) {
+  const m = getHostMetrics(host);
+  m.totalLatencyMs += ms;
+  if (ms < m.minLatencyMs) m.minLatencyMs = ms;
+  if (ms > m.maxLatencyMs) m.maxLatencyMs = ms;
+}
+
 // ─── Circuit Breaker ─────────────────────────────────────────
 
 type CBState = "closed" | "open" | "half-open";
@@ -141,16 +170,20 @@ export async function fetchJSON<T>(
   if (!skipCircuitBreaker) {
     const cb = getBreaker(host);
     if (cb.state === "open") {
+      getHostMetrics(host).totalFailures++;
       throw new FetchError(`Circuit open for ${host}`, 503, host);
     }
   }
 
   let lastError: Error | null = null;
+  const m = getHostMetrics(host);
+  m.totalRequests++;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     await acquireSlot(host);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
+    const fetchStart = Date.now();
 
     try {
       const res = await fetch(url, {
@@ -167,15 +200,18 @@ export async function fetchJSON<T>(
 
       clearTimeout(timer);
       releaseSlot(host);
+      recordLatency(host, Date.now() - fetchStart);
 
       if (res.status === 429) {
+        m.total429s++;
         const retryAfter = Number(res.headers.get("Retry-After") || "5");
-        logger.warn({ host, retryAfter }, "Rate limited — backing off");
+        logger.warn({ host, retryAfter }, "Rate limited — backing off");;
         await sleep(retryAfter * 1000);
         continue;
       }
 
       if (!res.ok) {
+        m.totalFailures++;
         recordFailure(host);
         throw new FetchError(`HTTP ${res.status}`, res.status, host);
       }
@@ -185,6 +221,7 @@ export async function fetchJSON<T>(
     } catch (err) {
       clearTimeout(timer);
       releaseSlot(host);
+      recordLatency(host, Date.now() - fetchStart);
       lastError = err as Error;
       if ((err as FetchError).status === 503 && (err as FetchError).name === "FetchError") throw err;
       recordFailure(host);
@@ -199,6 +236,7 @@ export async function fetchJSON<T>(
   }
 
   logger.error({ host, error: lastError?.message }, "Fetch failed after retries");
+  m.totalFailures++;
   throw lastError;
 }
 
@@ -212,6 +250,19 @@ export function isCircuitOpen(host: string): boolean {
 export function circuitBreakerStats(): Record<string, { state: CBState; failures: number }> {
   const out: Record<string, { state: CBState; failures: number }> = {};
   for (const [host, cb] of breakers) out[host] = { state: cb.state, failures: cb.failures };
+  return out;
+}
+
+/** Per-host fetch metrics for monitoring/debugging */
+export function fetchMetrics(): Record<string, HostMetrics & { avgLatencyMs: number }> {
+  const out: Record<string, HostMetrics & { avgLatencyMs: number }> = {};
+  for (const [host, m] of hostMetrics) {
+    out[host] = {
+      ...m,
+      minLatencyMs: m.minLatencyMs === Infinity ? 0 : m.minLatencyMs,
+      avgLatencyMs: m.totalRequests > 0 ? Math.round(m.totalLatencyMs / m.totalRequests) : 0,
+    };
+  }
   return out;
 }
 

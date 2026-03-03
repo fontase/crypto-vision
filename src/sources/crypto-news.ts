@@ -354,3 +354,241 @@ export function getSources() {
     count: NEWS_SOURCES.length,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CryptoPanic API Integration
+// ═══════════════════════════════════════════════════════════════
+
+import { z } from "zod";
+
+const CRYPTOPANIC_API = "https://cryptopanic.com/api/v1";
+
+function getCryptoPanicKey(): string {
+  return process.env.CRYPTOPANIC_API_KEY ?? "";
+}
+
+// ─── Zod Schemas ─────────────────────────────────────────────
+
+const CryptoPanicSourceSchema = z.object({
+  domain: z.string(),
+  title: z.string(),
+  region: z.string().optional(),
+  path: z.string().nullable().optional(),
+});
+
+const CryptoPanicCurrencySchema = z.object({
+  code: z.string(),
+  title: z.string(),
+  slug: z.string().optional(),
+  url: z.string().optional(),
+});
+
+const CryptoPanicVotesSchema = z.object({
+  positive: z.number().default(0),
+  negative: z.number().default(0),
+  important: z.number().default(0),
+  liked: z.number().default(0),
+  disliked: z.number().default(0),
+  lol: z.number().default(0),
+  toxic: z.number().default(0),
+  saved: z.number().default(0),
+  comments: z.number().default(0),
+});
+
+const CryptoPanicPostSchema = z.object({
+  kind: z.enum(["news", "media", "analysis"]),
+  domain: z.string(),
+  title: z.string(),
+  published_at: z.string(),
+  slug: z.string().optional(),
+  id: z.number(),
+  url: z.string(),
+  created_at: z.string(),
+  source: CryptoPanicSourceSchema,
+  currencies: z.array(CryptoPanicCurrencySchema).nullable().default([]),
+  votes: CryptoPanicVotesSchema.optional(),
+  metadata: z.record(z.unknown()).optional(),
+});
+
+const CryptoPanicResponseSchema = z.object({
+  count: z.number(),
+  next: z.string().nullable(),
+  previous: z.string().nullable(),
+  results: z.array(CryptoPanicPostSchema),
+});
+
+export type CryptoPanicPost = z.infer<typeof CryptoPanicPostSchema>;
+export type CryptoPanicVotes = z.infer<typeof CryptoPanicVotesSchema>;
+export type CryptoPanicResponse = z.infer<typeof CryptoPanicResponseSchema>;
+
+// ─── CryptoPanic API Client ─────────────────────────────────
+
+async function cryptoPanicFetch(
+  endpoint: string,
+  params?: Record<string, string>,
+): Promise<CryptoPanicResponse> {
+  const key = getCryptoPanicKey();
+  if (!key) {
+    log.warn("CRYPTOPANIC_API_KEY not set — CryptoPanic endpoints unavailable");
+    return { count: 0, next: null, previous: null, results: [] };
+  }
+
+  const url = new URL(`${CRYPTOPANIC_API}${endpoint}`);
+  url.searchParams.set("auth_token", key);
+  url.searchParams.set("public", "true");
+
+  if (params) {
+    for (const [k, v] of Object.entries(params)) {
+      url.searchParams.set(k, v);
+    }
+  }
+
+  const raw = await fetchJSON<unknown>(url.toString(), { timeout: 10_000 });
+  const parsed = CryptoPanicResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    log.warn({ errors: parsed.error.issues.slice(0, 3) }, "CryptoPanic response validation failed");
+    return { count: 0, next: null, previous: null, results: [] };
+  }
+  return parsed.data;
+}
+
+/**
+ * Determine sentiment from CryptoPanic vote counts.
+ */
+function deriveSentiment(votes?: CryptoPanicVotes): "positive" | "negative" | "neutral" {
+  if (!votes) return "neutral";
+  const score = votes.positive - votes.negative;
+  if (score > 5) return "positive";
+  if (score < -5) return "negative";
+  return "neutral";
+}
+
+/**
+ * Determine importance from CryptoPanic vote counts.
+ */
+function deriveImportance(votes?: CryptoPanicVotes): "high" | "medium" | "low" {
+  if (!votes) return "low";
+  const total = votes.positive + votes.negative + votes.important + votes.liked;
+  if (votes.important > 10 || total > 50) return "high";
+  if (votes.important > 3 || total > 15) return "medium";
+  return "low";
+}
+
+/**
+ * Convert a CryptoPanic post into a NormalizedArticle-compatible shape.
+ */
+export function normalizeCryptoPanicPost(post: CryptoPanicPost): CryptoPanicNormalized {
+  return {
+    id: `cp-${post.id}`,
+    title: post.title,
+    url: post.url,
+    source: "cryptopanic",
+    sourceUrl: post.source.domain,
+    publishedAt: post.published_at,
+    categories: [post.kind],
+    coins: (post.currencies ?? []).map((c) => ({ symbol: c.code, name: c.title })),
+    sentiment: deriveSentiment(post.votes),
+    importance: deriveImportance(post.votes),
+    votes: post.votes ? {
+      positive: post.votes.positive,
+      negative: post.votes.negative,
+      important: post.votes.important,
+      liked: post.votes.liked,
+      disliked: post.votes.disliked,
+      lol: post.votes.lol,
+      toxic: post.votes.toxic,
+      saved: post.votes.saved,
+      comments: post.votes.comments,
+    } : undefined,
+  };
+}
+
+export interface CryptoPanicNormalized {
+  id: string;
+  title: string;
+  url: string;
+  source: string;
+  sourceUrl: string;
+  publishedAt: string;
+  categories: string[];
+  coins: Array<{ symbol: string; name: string }>;
+  sentiment: "positive" | "negative" | "neutral";
+  importance: "high" | "medium" | "low";
+  votes?: {
+    positive: number;
+    negative: number;
+    important: number;
+    liked: number;
+    disliked: number;
+    lol: number;
+    toxic: number;
+    saved: number;
+    comments: number;
+  };
+}
+
+// ─── CryptoPanic Exported Functions ──────────────────────────
+
+/**
+ * Fetch CryptoPanic posts with optional filter, currencies, and region.
+ */
+export async function getCryptoPanicPosts(
+  filter?: "rising" | "hot" | "bullish" | "bearish" | "important" | "saved" | "lol",
+  currencies?: string,
+  regions?: string,
+): Promise<CryptoPanicNormalized[]> {
+  const params: Record<string, string> = {};
+  if (filter) params.filter = filter;
+  if (currencies) params.currencies = currencies;
+  if (regions) params.regions = regions;
+
+  const cacheKey = `cp:posts:${filter ?? "all"}:${currencies ?? "all"}:${regions ?? "all"}`;
+  return cache.wrap(cacheKey, 60, async () => {
+    const res = await cryptoPanicFetch("/posts/", params);
+    return res.results.map(normalizeCryptoPanicPost);
+  });
+}
+
+/**
+ * Fetch trending (hot) posts from CryptoPanic.
+ */
+export async function getTrendingPosts(): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts("hot");
+}
+
+/**
+ * Fetch rising posts from CryptoPanic.
+ */
+export async function getRisingPosts(): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts("rising");
+}
+
+/**
+ * Fetch bullish posts from CryptoPanic.
+ */
+export async function getBullishPosts(): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts("bullish");
+}
+
+/**
+ * Fetch bearish posts from CryptoPanic.
+ */
+export async function getBearishPosts(): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts("bearish");
+}
+
+/**
+ * Fetch important posts from CryptoPanic.
+ */
+export async function getImportantPosts(): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts("important");
+}
+
+/**
+ * Fetch CryptoPanic news for a specific coin symbol (e.g. "BTC", "ETH").
+ */
+export async function getCryptoPanicNewsByCoin(
+  symbol: string,
+): Promise<CryptoPanicNormalized[]> {
+  return getCryptoPanicPosts(undefined, symbol.toUpperCase());
+}
