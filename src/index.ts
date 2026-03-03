@@ -74,6 +74,7 @@ import { etfRoutes } from "@/routes/etf";
 import { portfolioRoutes } from "@/routes/portfolio";
 import { socialRoutes } from "@/routes/social";
 import { newsFeedRoutes } from "@/routes/news-aggregator";
+import { anomalyRoutes } from "@/routes/anomaly";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -610,6 +611,14 @@ app.get("/api", (c) =>
         "GET /api/social/cc/:coinId": "CryptoCompare social stats",
         "GET /api/social/cc/history/:coinId": "CryptoCompare social history",
         "GET /api/social/dashboard": "Aggregate social dashboard",
+      },
+      anomalies: {
+        "GET /api/anomalies": "Recent anomaly events (?type&severity&limit)",
+        "GET /api/anomalies/stats": "Detection engine statistics",
+        "GET /api/anomalies/stream": "Server-Sent Events for real-time anomalies",
+        "GET /api/anomalies/types": "Available anomaly types",
+        "GET /api/anomalies/config": "Current detector configuration",
+      },
       newsFeed: {
         "GET /api/news-feed/latest": "Aggregated news from 130+ RSS feeds (?limit&source&category&page)",
         "GET /api/news-feed/search": "Search aggregated news (?q=query&limit)",
@@ -619,7 +628,6 @@ app.get("/api", (c) =>
         "GET /api/news-feed/homepage": "Homepage bundle (latest + breaking + trending)",
         "GET /api/news-feed/sources": "All available news sources",
         "GET /api/news-feed/categories": "Available news categories",
-      },
       },
       websocket: {
         "WS /ws/prices": "Real-time price ticks (subscribe by coin IDs via ?coins=bitcoin,ethereum)",
@@ -665,6 +673,7 @@ app.route("/api/etf", etfRoutes);
 app.route("/api/portfolio", portfolioRoutes);
 app.route("/api/social", socialRoutes);
 app.route("/api/news-feed", newsFeedRoutes);
+app.route("/api/anomalies", anomalyRoutes);
 app.route("/", keysRoutes);
 
 // ─── WebSocket Routes ─────────────────────────────────────────

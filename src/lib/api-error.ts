@@ -238,3 +238,15 @@ export class AppError extends Error {
     this.retryAfter = opts?.retryAfter;
   }
 }
+
+// ─── Error Message Extraction ────────────────────────────────
+
+/**
+ * Safely extract a human-readable message from an unknown caught value.
+ * Use in catch blocks instead of `(err: any) => err.message`.
+ */
+export function extractErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return String(err);
+}
