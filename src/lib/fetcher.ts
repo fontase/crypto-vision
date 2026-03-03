@@ -11,6 +11,11 @@
  */
 
 import { logger } from "./logger.js";
+import {
+  upstreamRequestsTotal,
+  upstreamRequestDurationSeconds,
+  circuitBreakerState as circuitBreakerGauge,
+} from "./metrics.js";
 
 // ─── Fetch Metrics ───────────────────────────────────────────
 
@@ -67,6 +72,7 @@ function getBreaker(host: string): CircuitBreaker {
   if (cb.state === "open" && Date.now() - cb.lastFailure > CB_RESET_MS) {
     cb.state = "half-open";
     cb.successesSinceHalfOpen = 0;
+    circuitBreakerGauge.set({ host }, 0.5);
     logger.info({ host }, "Circuit breaker → half-open");
   }
   return cb;
@@ -79,6 +85,7 @@ function recordSuccess(host: string) {
     if (cb.successesSinceHalfOpen >= CB_HALF_OPEN_SUCCESSES) {
       cb.state = "closed";
       cb.failures = 0;
+      circuitBreakerGauge.set({ host }, 0);
       logger.info({ host }, "Circuit breaker → closed");
     }
   } else {
@@ -92,6 +99,7 @@ function recordFailure(host: string) {
   cb.lastFailure = Date.now();
   if (cb.failures >= CB_THRESHOLD) {
     cb.state = "open";
+    circuitBreakerGauge.set({ host }, 1);
     logger.warn({ host, failures: cb.failures }, "Circuit breaker → OPEN");
   }
 }
@@ -204,6 +212,8 @@ export async function fetchJSON<T>(
 
       if (res.status === 429) {
         m.total429s++;
+        upstreamRequestsTotal.inc({ source: host, status: "429" });
+        upstreamRequestDurationSeconds.observe({ source: host }, (Date.now() - fetchStart) / 1000);
         const retryAfter = Number(res.headers.get("Retry-After") || "5");
         logger.warn({ host, retryAfter }, "Rate limited — backing off");;
         await sleep(retryAfter * 1000);
@@ -212,10 +222,14 @@ export async function fetchJSON<T>(
 
       if (!res.ok) {
         m.totalFailures++;
+        upstreamRequestsTotal.inc({ source: host, status: String(res.status) });
+        upstreamRequestDurationSeconds.observe({ source: host }, (Date.now() - fetchStart) / 1000);
         recordFailure(host);
         throw new FetchError(`HTTP ${res.status}`, res.status, host);
       }
 
+      upstreamRequestsTotal.inc({ source: host, status: String(res.status) });
+      upstreamRequestDurationSeconds.observe({ source: host }, (Date.now() - fetchStart) / 1000);
       recordSuccess(host);
       return (await res.json()) as T;
     } catch (err) {
@@ -223,7 +237,12 @@ export async function fetchJSON<T>(
       releaseSlot(host);
       recordLatency(host, Date.now() - fetchStart);
       lastError = err as Error;
-      if ((err as FetchError).status === 503 && (err as FetchError).name === "FetchError") throw err;
+      if ((err as FetchError).status === 503 && (err as FetchError).name === "FetchError") {
+        upstreamRequestsTotal.inc({ source: host, status: "503" });
+        throw err;
+      }
+      upstreamRequestsTotal.inc({ source: host, status: "error" });
+      upstreamRequestDurationSeconds.observe({ source: host }, (Date.now() - fetchStart) / 1000);
       recordFailure(host);
 
       if (attempt < retries) {

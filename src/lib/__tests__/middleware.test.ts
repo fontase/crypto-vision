@@ -4,8 +4,8 @@
  * Uses a real Hono app to exercise middleware end-to-end.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock logger to capture log calls and suppress output
 vi.mock("@/lib/logger.js", () => ({
@@ -32,10 +32,10 @@ vi.mock("@/lib/fetcher.js", () => {
   return { FetchError };
 });
 
-import { requestLogger, requestTimeout, globalErrorHandler } from "@/lib/middleware.js";
 import { AppError } from "@/lib/api-error.js";
 import { FetchError } from "@/lib/fetcher.js";
 import { logger as mockLogger } from "@/lib/logger.js";
+import { globalErrorHandler, requestLogger, requestTimeout } from "@/lib/middleware.js";
 
 // ─── requestLogger ──────────────────────────────────────────
 

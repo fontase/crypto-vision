@@ -33,6 +33,8 @@ import * as alt from "../sources/alternative.js";
 import * as coinlore from "../sources/coinlore.js";
 import { ApiError } from "../lib/api-error.js";
 import { tryMultipleSources } from "../lib/fallback.js";
+import { validateQueries, validateParam, CoinIdSchema, NumericIdSchema, ChainSlugSchema, HexAddressSchema } from "../lib/validation.js";
+import { MarketCoinsQuerySchema, MarketPriceQuerySchema, MarketSearchQuerySchema, MarketChartQuerySchema, MarketOhlcQuerySchema, MarketFearGreedQuerySchema, MarketGainersLosersQuerySchema, MarketHighVolumeQuerySchema, MarketAthDistanceQuerySchema, MarketCompareQuerySchema, MarketPaprikaTickersQuerySchema, MarketCoincapAssetsQuerySchema, MarketCoincapHistoryQuerySchema, MarketCoinloreTickersQuerySchema, MarketRatesQuerySchema, MarketMarketsQuerySchema } from "../lib/route-schemas.js";
 
 export const marketRoutes = new Hono();
 
@@ -61,12 +63,10 @@ interface NormalisedCoin {
 // ─── GET /api/coins ──────────────────────────────────────────
 
 marketRoutes.get("/coins", async (c) => {
-  const page = Number(c.req.query("page") || 1);
-  const perPage = Math.min(Number(c.req.query("per_page") || 100), 250);
-  const order = c.req.query("order") || "market_cap_desc";
-  const sparkline = c.req.query("sparkline") === "true";
-  const ids = c.req.query("ids");
-  const category = c.req.query("category");
+  const q = validateQueries(c, MarketCoinsQuerySchema);
+  if (!q.success) return q.error;
+  const { page, per_page: perPage, order, ids, category } = q.data;
+  const sparkline = q.data.sparkline === "true";
 
   const result = await tryMultipleSources<NormalisedCoin[]>(
     `coins:p${page}:pp${perPage}`,
@@ -167,7 +167,9 @@ marketRoutes.get("/coins", async (c) => {
 // ─── GET /api/coin/:id ──────────────────────────────────────
 
 marketRoutes.get("/coin/:id", async (c) => {
-  const detail = await cg.getCoinDetail(c.req.param("id"));
+  const pv = validateParam(c, "id", CoinIdSchema);
+  if (!pv.success) return pv.error;
+  const detail = await cg.getCoinDetail(pv.data);
 
   return c.json({
     data: {
@@ -201,10 +203,10 @@ marketRoutes.get("/coin/:id", async (c) => {
 // ─── GET /api/price ──────────────────────────────────────────
 
 marketRoutes.get("/price", async (c) => {
-  const ids = c.req.query("ids");
-  if (!ids) return ApiError.missingParam(c, "ids");
-
-  const vs = c.req.query("vs_currencies") || "usd";
+  const q = validateQueries(c, MarketPriceQuerySchema);
+  if (!q.success) return q.error;
+  const ids = q.data.ids;
+  const vs = q.data.vs_currencies;
   const data = await cg.getPrice(ids, vs);
 
   return c.json({ data, timestamp: new Date().toISOString() });
@@ -309,10 +311,11 @@ marketRoutes.get("/global", async (c) => {
 // ─── GET /api/search ─────────────────────────────────────────
 
 marketRoutes.get("/search", async (c) => {
-  const q = c.req.query("q");
-  if (!q) return ApiError.missingParam(c, "q");
+  const qv = validateQueries(c, MarketSearchQuerySchema);
+  if (!qv.success) return qv.error;
+  const query = qv.data.q;
 
-  const results = await cg.searchCoins(q);
+  const results = await cg.searchCoins(query);
 
   return c.json({
     data: results.coins.map((coin) => ({
@@ -328,9 +331,13 @@ marketRoutes.get("/search", async (c) => {
 // ─── GET /api/chart/:id ──────────────────────────────────────
 
 marketRoutes.get("/chart/:id", async (c) => {
-  const days = c.req.query("days") || "7";
-  const interval = c.req.query("interval");
-  const data = await cg.getMarketChart(c.req.param("id"), days, interval || undefined);
+  const pv = validateParam(c, "id", CoinIdSchema);
+  if (!pv.success) return pv.error;
+  const q = validateQueries(c, MarketChartQuerySchema);
+  if (!q.success) return q.error;
+  const days = String(q.data.days);
+  const interval = q.data.interval;
+  const data = await cg.getMarketChart(pv.data, days, interval || undefined);
 
   return c.json({
     data: {
@@ -345,8 +352,12 @@ marketRoutes.get("/chart/:id", async (c) => {
 // ─── GET /api/ohlc/:id ──────────────────────────────────────
 
 marketRoutes.get("/ohlc/:id", async (c) => {
-  const days = Number(c.req.query("days") || 7);
-  const data = await cg.getOHLC(c.req.param("id"), days);
+  const pv = validateParam(c, "id", CoinIdSchema);
+  if (!pv.success) return pv.error;
+  const q = validateQueries(c, MarketOhlcQuerySchema);
+  if (!q.success) return q.error;
+  const days = q.data.days;
+  const data = await cg.getOHLC(pv.data, days);
 
   return c.json({
     data: data.map(([t, o, h, l, cl]) => ({

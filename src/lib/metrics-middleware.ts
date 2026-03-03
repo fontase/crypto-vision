@@ -12,9 +12,9 @@
 
 import type { MiddlewareHandler } from "hono";
 import {
-  httpRequestsTotal,
-  httpRequestDurationSeconds,
-  normalizePath,
+    httpRequestDurationSeconds,
+    httpRequestsTotal,
+    normalizePath,
 } from "./metrics.js";
 
 /**
@@ -26,13 +26,13 @@ import {
  * (e.g. /api/coin/bitcoin → /api/coin/:id).
  */
 export const metricsMiddleware: MiddlewareHandler = async (c, next) => {
-  const method = c.req.method;
-  const path = normalizePath(c.req.path);
-  const end = httpRequestDurationSeconds.startTimer({ method, path });
+    const method = c.req.method;
+    const path = normalizePath(c.req.path);
+    const end = httpRequestDurationSeconds.startTimer({ method, path });
 
-  await next();
+    await next();
 
-  const status = String(c.res.status);
-  end();
-  httpRequestsTotal.inc({ method, path, status });
+    const status = String(c.res.status);
+    end();
+    httpRequestsTotal.inc({ method, path, status });
 };

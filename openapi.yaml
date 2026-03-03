@@ -32,6 +32,8 @@ tags:
     description: On-chain data — gas prices, Bitcoin network stats, and token lookups
   - name: AI
     description: AI-powered crypto analysis — sentiment, digests, signals, and Q&A (requires LLM API key)
+  - name: Search
+    description: Unified semantic search — natural language queries, autocomplete, and AI-powered answers
 
 paths:
   # ──────────────────────────────────────────────────────────────
@@ -344,6 +346,214 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  # ──────────────────────────────────────────────────────────────
+  # Semantic Search
+  # ──────────────────────────────────────────────────────────────
+
+  /api/search/smart:
+    get:
+      operationId: smartSearch
+      summary: Semantic search across all data
+      description: >
+        Natural language search across coins, protocols, news, pools, and agents.
+        Automatically detects query intent (price lookup, yield search, comparison, etc.)
+        and routes to the most relevant data sources in parallel.
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query (2–500 characters)
+          schema:
+            type: string
+            minLength: 2
+            maxLength: 500
+        - name: types
+          in: query
+          description: Comma-separated result type filter (coin, protocol, news, pool, agent, chain, concept)
+          schema:
+            type: string
+            example: "coin,protocol,news"
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: timeRange
+          in: query
+          description: Time range filter for news
+          schema:
+            type: string
+            enum: ["1h", "24h", "7d", "30d", "all"]
+        - name: chain
+          in: query
+          description: Filter by blockchain
+          schema:
+            type: string
+            example: "Ethereum"
+        - name: minRelevance
+          in: query
+          description: Minimum relevance score (0–1)
+          schema:
+            type: number
+            default: 0.1
+            minimum: 0
+            maximum: 1
+      responses:
+        "200":
+          description: Search results with metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SearchResult"
+                  meta:
+                    type: object
+                    properties:
+                      query:
+                        type: string
+                      intent:
+                        type: string
+                        enum:
+                          - price_lookup
+                          - comparison
+                          - event_query
+                          - yield_search
+                          - protocol_search
+                          - news_search
+                          - concept_explain
+                          - risk_assessment
+                          - chain_comparison
+                          - general
+                      totalResults:
+                        type: integer
+                      searchTimeMs:
+                        type: integer
+                      suggestions:
+                        type: array
+                        items:
+                          type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/search/nlq:
+    get:
+      operationId: naturalLanguageQuery
+      summary: AI-powered natural language query
+      description: >
+        Ask any crypto question and get an AI-generated answer with sources.
+        Combines semantic search with RAG (Retrieval-Augmented Generation)
+        for grounded, data-backed responses.
+      tags: [Search, AI]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Natural language question (5–1000 characters)
+          schema:
+            type: string
+            minLength: 5
+            maxLength: 1000
+      responses:
+        "200":
+          description: AI answer with sources and search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      answer:
+                        type: string
+                        description: AI-generated answer
+                      sources:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            content:
+                              type: string
+                            score:
+                              type: number
+                      searchResults:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SearchResult"
+                      intent:
+                        type: string
+                  model:
+                    type: string
+                  ragUsed:
+                    type: boolean
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                  searchTimeMs:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/search/suggest:
+    get:
+      operationId: searchSuggest
+      summary: Search autocomplete suggestions
+      description: >
+        Fast autocomplete endpoint for search UIs. Returns coin names
+        and common query completions within ~200ms.
+      tags: [Search]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Partial search query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        text:
+                          type: string
+                        type:
+                          type: string
+                        id:
+                          type: string
 
   /api/chart/{id}:
     get:
@@ -1543,6 +1753,34 @@ components:
         error:
           type: string
       required: [error]
+
+    # ── Search ─────────────────────────────────────────────────
+    SearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique result ID (format type:identifier)
+          example: "coin:bitcoin"
+        type:
+          type: string
+          enum: [coin, protocol, news, agent, pool, chain, concept]
+        title:
+          type: string
+          example: "Bitcoin (BTC)"
+        description:
+          type: string
+        relevanceScore:
+          type: number
+          minimum: 0
+          maximum: 1
+        data:
+          type: object
+          additionalProperties: true
+        url:
+          type: string
+          format: uri
+          nullable: true
 
     # ── Market ─────────────────────────────────────────────────
     CoinSummary:

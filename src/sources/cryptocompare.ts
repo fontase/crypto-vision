@@ -209,3 +209,66 @@ export function getBlockchainAvailable(): Promise<{
 }> {
   return cc("/blockchain/list", 3600);
 }
+
+// ─── Coin List & Symbol Resolution ───────────────────────────
+
+export interface CoinListEntry {
+  Id: string;
+  Symbol: string;
+  CoinName: string;
+  FullName: string;
+  ImageUrl?: string;
+}
+
+/**
+ * Full coin list from CryptoCompare (cached for 1 hour).
+ */
+export function getCoinList(): Promise<{
+  Data: Record<string, CoinListEntry>;
+}> {
+  return cc("/all/coinlist", 3600);
+}
+
+/**
+ * Resolve a symbol (BTC, ETH, SOL) to its CryptoCompare numeric coin ID.
+ * Returns null if the symbol is not found.
+ */
+export async function resolveCoinId(symbol: string): Promise<number | null> {
+  const list = await getCoinList();
+  const upper = symbol.toUpperCase();
+  const coin = list.Data[upper];
+  return coin ? Number(coin.Id) : null;
+}
+
+/**
+ * CryptoCompare social history for a coin over time (daily).
+ */
+export function getSocialHistory(
+  coinId: number,
+  limit = 30,
+): Promise<{
+  Data: Array<{
+    time: number;
+    comments: number;
+    posts: number;
+    followers: number;
+    points: number;
+    overview_page_views: number;
+    analysis_page_views: number;
+    total_page_views: number;
+  }>;
+}> {
+  return cc(`/social/coin/histo/day?coinId=${coinId}&limit=${limit}`, 600);
+}
+
+/**
+ * Get OHLCV daily data for correlation calculations.
+ */
+export function getHistoDayForCorrelation(
+  fsym: string,
+  limit = 30,
+): Promise<{
+  Data: { Data: Array<{ time: number; close: number; high: number; low: number; open: number; volumefrom: number; volumeto: number }> };
+}> {
+  return cc(`/v2/histoday?fsym=${fsym}&tsym=USD&limit=${limit}`, 300);
+}

@@ -26,9 +26,9 @@
  */
 
 import { Hono } from "hono";
-import * as jupiter from "../sources/jupiter.js";
-import * as cg from "../sources/coingecko.js";
 import { ApiError } from "../lib/api-error.js";
+import * as cg from "../sources/coingecko.js";
+import * as jupiter from "../sources/jupiter.js";
 
 export const solanaRoutes = new Hono();
 
@@ -50,18 +50,18 @@ solanaRoutes.get("/overview", async (c) => {
       price:
         solPrice.status === "fulfilled"
           ? {
-              usd: solPrice.value.market_data.current_price.usd,
-              change24h:
-                solPrice.value.market_data.price_change_percentage_24h,
-              change7d:
-                solPrice.value.market_data.price_change_percentage_7d,
-              change30d:
-                solPrice.value.market_data.price_change_percentage_30d,
-              marketCap: solPrice.value.market_data.market_cap.usd,
-              volume24h: solPrice.value.market_data.total_volume.usd,
-              circulatingSupply:
-                solPrice.value.market_data.circulating_supply,
-            }
+            usd: solPrice.value.market_data.current_price.usd,
+            change24h:
+              solPrice.value.market_data.price_change_percentage_24h,
+            change7d:
+              solPrice.value.market_data.price_change_percentage_7d,
+            change30d:
+              solPrice.value.market_data.price_change_percentage_30d,
+            marketCap: solPrice.value.market_data.market_cap.usd,
+            volume24h: solPrice.value.market_data.total_volume.usd,
+            circulatingSupply:
+              solPrice.value.market_data.circulating_supply,
+          }
           : null,
       network: {
         tps: tpsData.status === "fulfilled" ? tpsData.value.tps : null,
@@ -76,11 +76,11 @@ solanaRoutes.get("/overview", async (c) => {
         totalStakedSol:
           validators.status === "fulfilled"
             ? Math.round(
-                validators.value.reduce(
-                  (sum, v) => sum + v.activatedStake,
-                  0,
-                ) / 1e9,
-              )
+              validators.value.reduce(
+                (sum, v) => sum + v.activatedStake,
+                0,
+              ) / 1e9,
+            )
             : null,
         epoch:
           epochInfo.status === "fulfilled" ? epochInfo.value.epoch : null,
@@ -92,12 +92,12 @@ solanaRoutes.get("/overview", async (c) => {
       supply:
         supply.status === "fulfilled"
           ? {
-              totalSol: Math.round(supply.value.totalSol),
-              circulatingSol: Math.round(supply.value.circulatingSol),
-              nonCirculatingSol: Math.round(
-                supply.value.nonCirculatingSol,
-              ),
-            }
+            totalSol: Math.round(supply.value.totalSol),
+            circulatingSol: Math.round(supply.value.circulatingSol),
+            nonCirculatingSol: Math.round(
+              supply.value.nonCirculatingSol,
+            ),
+          }
           : null,
       ecosystem: {
         registeredTokens:
@@ -153,10 +153,10 @@ solanaRoutes.get("/token/:mint", async (c) => {
       extensions: token.extensions ?? {},
       price: price
         ? {
-            usd: price.price,
-            vsToken: price.vsToken,
-            vsTokenSymbol: price.vsTokenSymbol,
-          }
+          usd: price.price,
+          vsToken: price.vsToken,
+          vsTokenSymbol: price.vsTokenSymbol,
+        }
         : null,
     },
     timestamp: new Date().toISOString(),

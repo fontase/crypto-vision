@@ -20,6 +20,7 @@
 
 import { logger } from "./logger.js";
 import { getRedis, isRedisConnected, disconnectRedis } from "./redis.js";
+import { cacheHitsTotal, cacheMissesTotal } from "./metrics.js";
 
 // ─── Configuration ───────────────────────────────────────────
 
@@ -51,11 +52,12 @@ class MemoryCache {
 
   get<T>(key: string): { value: T; stale: boolean } | null {
     const entry = this.store.get(key) as CacheEntry<T> | undefined;
-    if (!entry) { this.misses++; return null; }
+    if (!entry) { this.misses++; cacheMissesTotal.inc({ layer: "memory" }); return null; }
     const now = Date.now();
     if (now > entry.expiresAt) {
       this.store.delete(key);
       this.misses++;
+      cacheMissesTotal.inc({ layer: "memory" });
       return null;
     }
     // Move to end of Map for LRU ordering (Map iteration is insertion order)
@@ -63,6 +65,7 @@ class MemoryCache {
     this.store.set(key, entry);
     const stale = now > entry.staleAt;
     if (stale) { this.staleHits++; } else { this.hits++; }
+    cacheHitsTotal.inc({ layer: "memory" });
     return { value: entry.value, stale };
   }
 
@@ -121,8 +124,10 @@ export const cache = {
           // Backfill memory with remaining TTL from Redis
           const ttl = await r.ttl(`cv:${key}`).catch(() => 30);
           mem.set(key, parsed, Math.max(ttl, 10));
+          cacheHitsTotal.inc({ layer: "redis" });
           return parsed;
         }
+        cacheMissesTotal.inc({ layer: "redis" });
       } catch (err) {
         logger.warn({ key, err: (err as Error).message }, "Redis read failure — falling back to memory");
       }

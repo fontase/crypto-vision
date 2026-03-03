@@ -4,8 +4,8 @@
  * Mocks the Snapshot source adapter so no real HTTP calls are made.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Mock sources BEFORE importing routes ────────────────────
 

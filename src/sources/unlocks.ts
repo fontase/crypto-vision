@@ -10,8 +10,8 @@
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
 import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -439,18 +439,18 @@ export async function getUnlockImpact(symbol: string): Promise<UnlockImpact> {
     // Selling pressure assessment
     const sellingPressure: "extreme" | "high" | "moderate" | "low" | "none" =
       unlockPercent > 5 ? "extreme" :
-      unlockPercent > 2 ? "high" :
-      unlockPercent > 0.5 ? "moderate" :
-      unlockPercent > 0 ? "low" :
-      "none";
+        unlockPercent > 2 ? "high" :
+          unlockPercent > 0.5 ? "moderate" :
+            unlockPercent > 0 ? "low" :
+              "none";
 
     // Historical avg impact estimate (empirical: large unlocks ~2-8% drop)
     const historicalAvgImpact =
       unlockPercent > 5 ? -8.5 :
-      unlockPercent > 2 ? -5.2 :
-      unlockPercent > 0.5 ? -2.8 :
-      unlockPercent > 0 ? -1.0 :
-      0;
+        unlockPercent > 2 ? -5.2 :
+          unlockPercent > 0.5 ? -2.8 :
+            unlockPercent > 0 ? -1.0 :
+              0;
 
     // Risk score (1-10)
     const riskRating = Math.min(10, Math.max(1, Math.round(unlockPercent * 2)));
@@ -458,10 +458,10 @@ export async function getUnlockImpact(symbol: string): Promise<UnlockImpact> {
     // Recommendation
     const recommendation =
       sellingPressure === "extreme" ? "Consider reducing position before unlock. Extreme selling pressure expected." :
-      sellingPressure === "high" ? "Exercise caution. Significant selling pressure likely around unlock date." :
-      sellingPressure === "moderate" ? "Monitor position. Moderate selling pressure possible." :
-      sellingPressure === "low" ? "Low risk from unlock. Minimal expected impact on price." :
-      "No upcoming unlocks detected.";
+        sellingPressure === "high" ? "Exercise caution. Significant selling pressure likely around unlock date." :
+          sellingPressure === "moderate" ? "Monitor position. Moderate selling pressure possible." :
+            sellingPressure === "low" ? "Low risk from unlock. Minimal expected impact on price." :
+              "No upcoming unlocks detected.";
 
     const totalLocked = unlockData?.totalLocked || 0;
     const totalLockedUsd = totalLocked * currentPrice;

@@ -8,9 +8,9 @@
  *           exchanges, categories, historical data.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
+import { ingestExchangeSnapshots, ingestMarketSnapshots, ingestOHLCCandles } from "../lib/bq-ingest.js";
 import { cache } from "../lib/cache.js";
-import { ingestMarketSnapshots, ingestOHLCCandles, ingestExchangeSnapshots } from "../lib/bq-ingest.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 const BASE = process.env.COINGECKO_PRO === "true"
   ? "https://pro-api.coingecko.com/api/v3"

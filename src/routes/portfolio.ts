@@ -18,20 +18,18 @@
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
 
-import { z } from "zod";
 import { Hono } from "hono";
+import { z } from "zod";
+import { ApiError } from "../lib/api-error.js";
 import { cache } from "../lib/cache.js";
+import {
+    CoinIdSchema,
+    PortfolioHoldingsSchema,
+    validateBody
+} from "../lib/validation.js";
 import * as cg from "../sources/coingecko.js";
 import * as evm from "../sources/evm.js";
 import * as portfolio from "../sources/portfolio.js";
-import { ApiError } from "../lib/api-error.js";
-import {
-  PortfolioHoldingsSchema,
-  AssetIdsSchema,
-  RiskAnalysisSchema,
-  CoinIdSchema,
-  validateBody,
-} from "../lib/validation.js";
 
 export const portfolioRoutes = new Hono();
 

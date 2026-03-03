@@ -9,8 +9,8 @@
  *   const body = validateBody(c, AskBodySchema);
  */
 
-import { z } from "zod";
 import type { Context } from "hono";
+import { z } from "zod";
 import { ApiError, type ValidationError } from "./api-error.js";
 
 // ─── Shared Primitives ──────────────────────────────────────

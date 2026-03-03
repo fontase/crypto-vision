@@ -11,6 +11,7 @@
  */
 
 import { logger } from "./logger.js";
+import { queueDepth, queueTasksTotal, queueTaskDurationSeconds } from "./metrics.js";
 
 export interface QueueConfig {
   /** Max concurrent executions (default: 10) */
@@ -71,7 +72,9 @@ export class RequestQueue {
     if (this.running > this.metrics.peakConcurrent) {
       this.metrics.peakConcurrent = this.running;
     }
+    queueDepth.set({ queue_name: this.name }, this.running + this.queue.length);
 
+    const execStart = Date.now();
     try {
       // Wrap with timeout
       const result = await Promise.race([
@@ -86,14 +89,21 @@ export class RequestQueue {
         }),
       ]);
       this.metrics.totalExecuted++;
+      queueTasksTotal.inc({ queue_name: this.name, result: "success" });
+      queueTaskDurationSeconds.observe({ queue_name: this.name }, (Date.now() - execStart) / 1000);
       return result;
     } catch (err) {
       if (err instanceof Error && err.message === "Queue task timeout") {
         this.metrics.totalTimedOut++;
+        queueTasksTotal.inc({ queue_name: this.name, result: "timeout" });
+      } else {
+        queueTasksTotal.inc({ queue_name: this.name, result: "error" });
       }
+      queueTaskDurationSeconds.observe({ queue_name: this.name }, (Date.now() - execStart) / 1000);
       throw err;
     } finally {
       this.release();
+      queueDepth.set({ queue_name: this.name }, this.running + this.queue.length);
     }
   }
 
@@ -105,6 +115,7 @@ export class RequestQueue {
 
     if (this.queue.length >= this.config.maxQueue) {
       this.metrics.totalRejected++;
+      queueTasksTotal.inc({ queue_name: this.name, result: "rejected" });
       throw new QueueFullError(this.config.maxQueue);
     }
 

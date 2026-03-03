@@ -19,11 +19,16 @@
     "training:finetune": "tsx scripts/training/finetune-gemini.ts",
     "training:eval": "tsx scripts/training/eval-models.ts",
     "training:eval:quick": "tsx scripts/training/eval-models.ts quick",
-    "training:retrain": "tsx scripts/training/retrain.ts"
+    "training:retrain": "tsx scripts/training/retrain.ts",
+    "export": "tsx scripts/export-all.ts",
+    "export:dry-run": "tsx scripts/export-all.ts --dry-run",
+    "export:download": "bash scripts/download-exports.sh",
+    "export:import-pg": "tsx scripts/import-to-postgres.ts"
   },
   "dependencies": {
     "@google-cloud/aiplatform": "^6.5.0",
     "@google-cloud/pubsub": "^5.3.0",
+    "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/storage": "^7.19.0",
     "@google-cloud/vertexai": "^1.10.0",
     "@hono/node-server": "^1.13.0",
@@ -38,7 +43,6 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@google-cloud/bigquery": "^8.1.1",
     "@types/node": "^22.0.0",
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

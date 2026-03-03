@@ -5,33 +5,33 @@
  * https://cryptocurrency.cv
  */
 
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { compress } from "hono/compress";
-import { secureHeaders } from "hono/secure-headers";
-import { timing } from "hono/timing";
-import { requestId } from "hono/request-id";
-import { bodyLimit } from "hono/body-limit";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
+import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { compress } from "hono/compress";
+import { cors } from "hono/cors";
+import { requestId } from "hono/request-id";
+import { secureHeaders } from "hono/secure-headers";
+import { timing } from "hono/timing";
 
 import { logger as log } from "@/lib/logger";
 // Validate env vars at startup — must be early so we fail fast on bad config
-import "@/lib/env";
-import { cache } from "@/lib/cache";
-import { rateLimit } from "@/lib/rate-limit";
 import { ApiError } from "@/lib/api-error";
-import { requestLogger, globalErrorHandler, requestTimeout } from "@/lib/middleware";
 import { apiKeyAuth } from "@/lib/auth";
-import { circuitBreakerStats, fetchMetrics } from "@/lib/fetcher";
-import { getDegradedRoutes, degradedRouteCount } from "@/lib/fallback";
-import { aiQueue, heavyFetchQueue } from "@/lib/queue";
+import { cache } from "@/lib/cache";
+import "@/lib/env";
 import { etagMiddleware } from "@/lib/etag";
+import { degradedRouteCount, getDegradedRoutes } from "@/lib/fallback";
+import { circuitBreakerStats, fetchMetrics } from "@/lib/fetcher";
+import { globalErrorHandler, requestLogger, requestTimeout } from "@/lib/middleware";
+import { aiQueue, heavyFetchQueue } from "@/lib/queue";
+import { rateLimit } from "@/lib/rate-limit";
 import { responseEnvelope } from "@/lib/response-envelope";
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -39,43 +39,44 @@ const pkg = JSON.parse(
 ) as { version: string };
 const APP_VERSION = pkg.version;
 
-import { marketRoutes } from "@/routes/market";
-import { defiRoutes } from "@/routes/defi";
-import { newsRoutes } from "@/routes/news";
-import { onchainRoutes } from "@/routes/onchain";
-import { aiRoutes } from "@/routes/ai";
-import { dexRoutes } from "@/routes/dex";
-import { securityRoutes } from "@/routes/security";
-import { l2Routes } from "@/routes/l2";
-import { derivativesRoutes } from "@/routes/derivatives";
-import { bitcoinRoutes } from "@/routes/bitcoin";
-import { gasRoutes } from "@/routes/gas";
-import { researchRoutes } from "@/routes/research";
-import { aggregateRoutes } from "@/routes/aggregate";
-import { createWsRoutes } from "@/routes/ws";
 import { startUpstreams, stopUpstreams, wsStats } from "@/lib/ws";
-import { keysRoutes } from "@/routes/keys";
-import { cexRoutes } from "@/routes/cex";
-import { analyticsRoutes } from "@/routes/analytics";
 import { agentsRoutes } from "@/routes/agents";
-import { perpsRoutes } from "@/routes/perps";
-import { governanceRoutes } from "@/routes/governance";
-import { macroRoutes } from "@/routes/macro";
-import { solanaRoutes } from "@/routes/solana";
-import { depinRoutes } from "@/routes/depin";
-import { exchangesRoutes } from "@/routes/exchanges";
-import { nftRoutes } from "@/routes/nft";
-import { whaleRoutes } from "@/routes/whales";
-import { stakingRoutes } from "@/routes/staking";
-import { calendarRoutes } from "@/routes/calendar";
-import { oracleRoutes } from "@/routes/oracles";
-import { unlocksRoutes } from "@/routes/unlocks";
-import { etfRoutes } from "@/routes/etf";
-import { portfolioRoutes } from "@/routes/portfolio";
-import { socialRoutes } from "@/routes/social";
-import { newsFeedRoutes } from "@/routes/news-aggregator";
+import { aggregateRoutes } from "@/routes/aggregate";
+import { aiRoutes } from "@/routes/ai";
+import { analyticsRoutes } from "@/routes/analytics";
 import { anomalyRoutes } from "@/routes/anomaly";
+import { bitcoinRoutes } from "@/routes/bitcoin";
+import { calendarRoutes } from "@/routes/calendar";
+import { cexRoutes } from "@/routes/cex";
+import { defiRoutes } from "@/routes/defi";
+import { depinRoutes } from "@/routes/depin";
+import { derivativesRoutes } from "@/routes/derivatives";
+import { dexRoutes } from "@/routes/dex";
+import { etfRoutes } from "@/routes/etf";
+import { exchangesRoutes } from "@/routes/exchanges";
+import { gasRoutes } from "@/routes/gas";
+import { governanceRoutes } from "@/routes/governance";
+import { keysRoutes } from "@/routes/keys";
+import { l2Routes } from "@/routes/l2";
+import { macroRoutes } from "@/routes/macro";
+import { marketRoutes } from "@/routes/market";
+import { newsRoutes } from "@/routes/news";
+import { newsFeedRoutes } from "@/routes/news-aggregator";
+import { nftRoutes } from "@/routes/nft";
+import { onchainRoutes } from "@/routes/onchain";
+import { oracleRoutes } from "@/routes/oracles";
+import { perpsRoutes } from "@/routes/perps";
+import { portfolioRoutes } from "@/routes/portfolio";
+import { researchRoutes } from "@/routes/research";
 import { searchRoutes } from "@/routes/search";
+import { securityRoutes } from "@/routes/security";
+import { socialRoutes } from "@/routes/social";
+import { solanaRoutes } from "@/routes/solana";
+import { stakingRoutes } from "@/routes/staking";
+import { unlocksRoutes } from "@/routes/unlocks";
+import { whaleRoutes } from "@/routes/whales";
+import { createWsRoutes } from "@/routes/ws";
+import { exportRoutes } from "@/routes/export";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -89,6 +90,9 @@ app.use("*", requestId());
 app.use("*", timing());
 app.use("*", secureHeaders());
 app.use("*", compress());
+
+// Prometheus metrics — instruments every request with counters + histograms
+app.use("*", metricsMiddleware);
 
 // Body size limit — prevent abuse from oversized payloads (10M+ user protection)
 app.use("/api/*", bodyLimit({ maxSize: 256 * 1024 })); // 256 KB
@@ -151,6 +155,13 @@ app.get("/health", async (c) => {
   const redisDown = !cacheStats.redisConnected && !!process.env.REDIS_URL;
   const healthy = !redisDown && openCircuits === 0 && degradedCount === 0;
 
+  // Update WebSocket connection gauge for Prometheus
+  const ws = wsStats();
+  const totalWsConnections = Object.values(ws.clients).reduce(
+    (sum, count) => sum + count, 0,
+  );
+  activeWebsocketConnections.set(totalWsConnections);
+
   return c.json(
     {
       status: healthy ? "ok" : "degraded",
@@ -174,6 +185,22 @@ app.get("/health", async (c) => {
     },
     healthy ? 200 : 503,
   );
+});
+
+// ─── Prometheus Metrics Endpoint ─────────────────────────────
+
+app.get("/metrics", async (c) => {
+  // Update WebSocket gauge before scrape
+  const ws = wsStats();
+  const totalWsConnections = Object.values(ws.clients).reduce(
+    (sum, count) => sum + count, 0,
+  );
+  activeWebsocketConnections.set(totalWsConnections);
+
+  const metrics = await metricsRegistry.metrics();
+  return c.text(metrics, 200, {
+    "Content-Type": metricsRegistry.contentType,
+  });
 });
 
 // ─── Readiness Probe ─────────────────────────────────────────
@@ -654,6 +681,12 @@ app.get("/api", (c) =>
         "WS /ws/trades": "DEX trade / boost feed (via DexScreener)",
         "GET /ws/status": "WebSocket connection status",
       },
+      admin: {
+        "POST /api/admin/export": "Trigger full GCP artifact export (admin key required)",
+        "GET /api/admin/export/status": "Export pipeline status & recent manifests",
+        "GET /api/admin/export/tables": "List all exportable BigQuery tables",
+        "GET /api/admin/export/manifest/:id": "Fetch a specific export manifest",
+      },
     },
   })
 );
@@ -694,7 +727,26 @@ app.route("/api/social", socialRoutes);
 app.route("/api/news-feed", newsFeedRoutes);
 app.route("/api/anomalies", anomalyRoutes);
 app.route("/api/search", searchRoutes);
+app.route("/api/admin/export", exportRoutes);
 app.route("/", keysRoutes);
+
+// ─── Metrics Summary (JSON) ──────────────────────────────────
+
+app.get("/api/metrics/summary", async (c) => {
+  // Update WebSocket gauge before collecting
+  const ws = wsStats();
+  const totalWsConnections = Object.values(ws.clients).reduce(
+    (sum, count) => sum + count, 0,
+  );
+  activeWebsocketConnections.set(totalWsConnections);
+
+  const summary = await getMetricsSummary();
+  return c.json({
+    metrics: summary,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
+});
 
 // ─── WebSocket Routes ─────────────────────────────────────────
 
