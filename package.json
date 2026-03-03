@@ -1,0 +1,43 @@
+{
+  "name": "crypto-vision",
+  "version": "0.1.0",
+  "description": "The complete cryptocurrency intelligence API — cryptocurrency.cv",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "docker:build": "docker build -t crypto-vision .",
+    "docker:run": "docker run -p 8080:8080 --env-file .env crypto-vision"
+  },
+  "dependencies": {
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.13.0",
+    "ioredis": "^5.4.0",
+    "zod": "^3.24.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "undici": "^7.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsx": "^4.19.0",
+    "tsc-alias": "^1.8.0",
+    "@types/node": "^22.0.0",
+    "vitest": "^3.0.0",
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "author": "nirholas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nirholas/crypto-vision"
+  }
+}
