@@ -16,6 +16,7 @@
 
 import { Hono } from "hono";
 import * as oracles from "../sources/oracles.js";
+import { PythPriceIdsSchema, validateBody } from "../lib/validation.js";
 
 export const oracleRoutes = new Hono();
 
@@ -57,14 +58,11 @@ oracleRoutes.get("/pyth/feeds", async (c) => {
   return c.json({ count: Array.isArray(data) ? data.length : 0, data });
 });
 
-oracleRoutes.post("/pyth/prices", async (c) => {
-  const body = await c.req.json<{ ids: string[] }>();
-  if (!body.ids || !Array.isArray(body.ids) || body.ids.length === 0) {
-    return c.json({ error: "POST body must include an 'ids' array of Pyth feed IDs" }, 400);
-  }
-  if (body.ids.length > 100) {
-    return c.json({ error: "Maximum 100 feed IDs per request" }, 400);
-  }
+oracleRoparsed = await validateBody(c, PythPriceIdsSchema);
+  if (!parsed.success) return parsed.error;
+  const { ids } = parsed.data;
+
+  const data = await oracles.getPythPriceFeeds(
   const data = await oracles.getPythPriceFeeds(body.ids);
   return c.json({ count: Array.isArray(data) ? data.length : 0, data });
 });

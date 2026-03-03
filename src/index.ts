@@ -71,6 +71,7 @@ import { unlocksRoutes } from "@/routes/unlocks";
 import { etfRoutes } from "@/routes/etf";
 import { portfolioRoutes } from "@/routes/portfolio";
 import { socialRoutes } from "@/routes/social";
+import { newsFeedRoutes } from "@/routes/news-aggregator";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -500,14 +501,14 @@ app.get("/api", (c) =>
         "POST /api/keys": "Generate new API key (admin)",
         "GET /api/keys/usage": "Usage stats for current key",
       },
-      calendar: {symbol": "Events for a specific coin",
+      calendar: {
+        "GET /api/calendar/events": "Upcoming hot crypto events (CoinMarketCal)",
+        "GET /api/calendar/coin/:symbol": "Events for a specific coin",
         "GET /api/calendar/categories": "Event categories",
         "GET /api/calendar/category/:id": "Events by category",
         "GET /api/calendar/coins": "Coins with upcoming events",
         "GET /api/calendar/paprika/:coinId": "CoinPaprika events for a coin",
-        "GET /api/calendar/aggregate": "Aggregated events from all source
-        "GET /api/calendar/category/:id": "Events by category",
-        "GET /api/calendar/coins": "Coins with upcoming events",
+        "GET /api/calendar/aggregate": "Aggregated events from all sources",
       },
       oracles: {
         "GET /api/oracles/chainlink/feeds": "Chainlink mainnet price feeds",
@@ -601,6 +602,16 @@ app.get("/api", (c) =>
         "GET /api/social/cc/:coinId": "CryptoCompare social stats",
         "GET /api/social/cc/history/:coinId": "CryptoCompare social history",
         "GET /api/social/dashboard": "Aggregate social dashboard",
+      newsFeed: {
+        "GET /api/news-feed/latest": "Aggregated news from 130+ RSS feeds (?limit&source&category&page)",
+        "GET /api/news-feed/search": "Search aggregated news (?q=query&limit)",
+        "GET /api/news-feed/breaking": "Breaking/urgent crypto news",
+        "GET /api/news-feed/trending": "Trending topics & articles",
+        "GET /api/news-feed/category/:cat": "News by category",
+        "GET /api/news-feed/homepage": "Homepage bundle (latest + breaking + trending)",
+        "GET /api/news-feed/sources": "All available news sources",
+        "GET /api/news-feed/categories": "Available news categories",
+      },
       },
       websocket: {
         "WS /ws/prices": "Real-time price ticks (subscribe by coin IDs via ?coins=bitcoin,ethereum)",
@@ -645,6 +656,7 @@ app.route("/api/unlocks", unlocksRoutes);
 app.route("/api/etf", etfRoutes);
 app.route("/api/portfolio", portfolioRoutes);
 app.route("/api/social", socialRoutes);
+app.route("/api/news-feed", newsFeedRoutes);
 app.route("/", keysRoutes);
 
 // ─── WebSocket Routes ─────────────────────────────────────────

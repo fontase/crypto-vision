@@ -434,7 +434,9 @@ function parseRSSFeed(
       const pubDateMatch = itemXml.match(pubDateRegex);
 
       const title = decodeHTMLEntities((titleMatch?.[1] || titleMatch?.[2] || "").trim());
-      const link = (linkMatch?.[1] || linkMatch?.[2] || "").trim();
+      const rawLink = (linkMatch?.[1] || linkMatch?.[2] || "").trim();
+      // Strip CDATA wrappers that some feeds leave inside <link> tags
+      const link = rawLink.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim();
       const rawDesc = descMatch?.[1] || descMatch?.[2] || "";
       const description = stripHTML(rawDesc);
       const pubDateStr = pubDateMatch?.[1] || "";

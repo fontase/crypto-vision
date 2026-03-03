@@ -39,6 +39,57 @@ export const LimitSchema = z.coerce.number().int().min(1).max(250).default(25);
 /** Days param for charts (1–365) */
 export const DaysSchema = z.coerce.number().int().min(1).max(365).default(7);
 
+// ─── Extended Primitives (route param validation) ────────────
+
+/** Chain or network slug (e.g. "ethereum", "bsc", "arbitrum-one") */
+export const ChainSlugSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-zA-Z0-9_-]+$/, "Invalid chain/network identifier");
+
+/** Bitcoin address: legacy (1…), P2SH (3…), or Bech32 (bc1…) */
+export const BitcoinAddressSchema = z
+  .string()
+  .regex(/^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,62}$/, "Invalid Bitcoin address");
+
+/** URL query param (bounded, for security /dapp endpoint) */
+export const UrlSchema = z.string().url("Invalid URL").max(2048);
+
+/** Period param for on-chain analytics */
+export const PeriodSchema = z.enum(["1w", "1m", "3m", "6m", "1y", "all"]);
+
+/** DEX pool OHLCV timeframe */
+export const TimeframeSchema = z.enum(["day", "hour", "minute"]);
+
+/** CoinCap history interval */
+export const CoinCapIntervalSchema = z.enum([
+  "m1", "m5", "m15", "m30", "h1", "h2", "h6", "h12", "d1",
+]);
+
+/** CoinGecko chart interval */
+export const ChartIntervalSchema = z.enum(["daily", "hourly", "5-minutely"]).optional();
+
+/** Numeric ID string (e.g. CoinLore uses numeric IDs) */
+export const NumericIdSchema = z
+  .string()
+  .regex(/^\d+$/, "ID must be numeric");
+
+/** Chain ID (numeric string, 1-6 digits) */
+export const ChainIdSchema = z
+  .string()
+  .regex(/^\d{1,6}$/, "Invalid chain ID");
+
+/** Comma-separated coin IDs list — validates each part */
+export const CoinIdListSchema = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine(
+    (s) => s.split(",").every((id) => /^[a-zA-Z0-9_-]+$/.test(id.trim())),
+    "Each coin ID must be alphanumeric (with hyphens/underscores)",
+  );
+
 // ─── POST Body Schemas ──────────────────────────────────────
 
 export const AskBodySchema = z.object({
@@ -77,7 +128,49 @@ export const AgentMultiSchema = z.object({
 });
 
 export const GenerateKeySchema = z.object({
-  tier: z.enum(["basic", "pro"]).optional().default("basic"),
+  tier: z.enum(["basic", "pro", "enterprise"]).optional().default("basic"),
+});
+
+/** Portfolio holdings for valuation & diversification endpoints */
+export const PortfolioHoldingsSchema = z.object({
+  holdings: z
+    .array(
+      z.object({
+        id: CoinIdSchema,
+        amount: z.number().positive("amount must be positive"),
+      }),
+    )
+    .min(1, "at least one holding required")
+    .max(50, "maximum 50 holdings per request"),
+  vs_currency: z.string().min(1).max(10).default("usd"),
+});
+
+/** Asset IDs for correlation / risk analysis */
+export const AssetIdsSchema = z.object({
+  ids: z
+    .array(z.string().min(1).max(128))
+    .min(2, "at least 2 coin IDs required")
+    .max(20, "maximum 20 assets"),
+  days: z.number().int().min(1).max(365).default(30),
+  vs_currency: z.string().min(1).max(10).default("usd"),
+});
+
+/** Risk analysis — requires at least 1 ID */
+export const RiskAnalysisSchema = z.object({
+  ids: z
+    .array(z.string().min(1).max(128))
+    .min(1, "at least 1 coin ID required")
+    .max(20, "maximum 20 assets"),
+  days: z.number().int().min(1).max(365).default(90),
+  vs_currency: z.string().min(1).max(10).default("usd"),
+});
+
+/** Pyth price feed IDs */
+export const PythPriceIdsSchema = z.object({
+  ids: z
+    .array(z.string().min(1))
+    .min(1, "at least one Pyth feed ID required")
+    .max(100, "maximum 100 feed IDs per request"),
 });
 
 // ─── Validation Helper ──────────────────────────────────────
@@ -123,6 +216,30 @@ export async function validateBody<T extends z.ZodTypeAny>(
   return { success: true, data: result.data };
 }
 
+/**
+ * Validate a query parameter against a Zod schema.
+ * Returns the parsed value or sends a 400 error response.
+ * If the query param is absent and the schema has a default, the default is used.
+ */
+export function validateQuery<T>(
+  c: Context,
+  queryName: string,
+  schema: z.ZodType<T>,
+): { success: true; data: T } | { success: false; error: Response } {
+  const raw = c.req.query(queryName);
+  const result = schema.safeParse(raw);
+  if (!result.success) {
+    return {
+      success: false,
+      error: ApiError.validation(
+        c,
+        `Invalid query param '${queryName}': ${result.error.issues[0]?.message || "invalid"}`,
+        [{ field: queryName, message: result.error.issues[0]?.message || "invalid" }],
+      ),
+    };
+  }
+  return { success: true, data: result.data };
+}
 /**
  * Validate a route param (e.g. :coin, :address).
  */

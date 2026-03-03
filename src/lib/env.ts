@@ -90,12 +90,50 @@ const EnvSchema = z.object({
       message: "HEAVY_FETCH_CONCURRENCY must be a positive integer",
     }),
 
-  // API keys — optional but at least one AI key should be present for /ai endpoints
-  COINGECKO_API_KEY: z.string().optional(),
-  COINGECKO_PRO: z.enum(["true", "false"]).default("false"),
-  NEWS_API_URL: z.string().optional(),
+  // Cache tuning
+  CACHE_MAX_ENTRIES: z
+    .string()
+    .default("200000")
+    .refine((v) => /^\d+$/.test(v) && Number(v) > 0, {
+      message: "CACHE_MAX_ENTRIES must be a positive integer",
+    }),
+
+  // Auth
   API_KEYS: z.string().optional(),
   ADMIN_API_KEYS: z.string().optional(),
+
+  // ─── Data Source API Keys (all optional — graceful degradation) ──
+
+  // Market data
+  COINGECKO_API_KEY: z.string().optional(),
+  COINGECKO_PRO: z.enum(["true", "false"]).default("false"),
+  COINCAP_API_KEY: z.string().optional(),
+  COINGLASS_API_KEY: z.string().optional(),
+  CRYPTOCOMPARE_API_KEY: z.string().optional(),
+
+  // Research & metrics
+  MESSARI_API_KEY: z.string().optional(),
+  TOKEN_TERMINAL_API_KEY: z.string().optional(),
+
+  // Calendar / events
+  COINMARKETCAL_API_KEY: z.string().optional(),
+
+  // On-chain / EVM
+  ETHERSCAN_API_KEY: z.string().optional(),
+  OWLRACLE_API_KEY: z.string().optional(),
+
+  // NFT
+  RESERVOIR_API_KEY: z.string().optional(),
+
+  // Whale tracking
+  BLOCKCHAIR_API_KEY: z.string().optional(),
+
+  // Staking
+  BEACONCHAIN_API_KEY: z.string().optional(),
+  RATED_API_KEY: z.string().optional(),
+
+  // News
+  NEWS_API_URL: z.string().optional(),
 
   // AI providers — all optional, but warn if none are set
   GROQ_API_KEY: z.string().optional(),
@@ -104,9 +142,16 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
 
-  // Infrastructure
+  // GCP / BigQuery / AI platform
   GCP_PROJECT_ID: z.string().optional(),
   GCP_REGION: z.string().default("us-central1"),
+  BQ_DATASET: z.string().default("crypto_vision"),
+  BQ_MAX_BYTES: z
+    .string()
+    .default("1000000000")
+    .refine((v) => /^\d+$/.test(v) && Number(v) > 0, {
+      message: "BQ_MAX_BYTES must be a positive integer",
+    }),
 });
 
 export type Env = z.infer<typeof EnvSchema>;
@@ -150,12 +195,46 @@ function validateEnv(): Env {
     );
   }
 
+  // Warn about missing data source API keys with degradation context
+  const sourceKeyStatus: Record<string, string> = {
+    COINGECKO_API_KEY: "CoinGecko Pro endpoints (rate-limited on free tier)",
+    COINCAP_API_KEY: "CoinCap WebSocket real-time prices",
+    COINGLASS_API_KEY: "Coinglass derivatives/perpetuals data",
+    CRYPTOCOMPARE_API_KEY: "CryptoCompare social & historical data",
+    MESSARI_API_KEY: "Messari research & metrics",
+    TOKEN_TERMINAL_API_KEY: "Token Terminal protocol revenue data",
+    COINMARKETCAL_API_KEY: "CoinMarketCal crypto calendar events",
+    ETHERSCAN_API_KEY: "Etherscan on-chain data (rate-limited without key)",
+    OWLRACLE_API_KEY: "Owlracle gas price estimates",
+    RESERVOIR_API_KEY: "Reservoir NFT market data",
+    BLOCKCHAIR_API_KEY: "Blockchair whale transaction tracking",
+    BEACONCHAIN_API_KEY: "Beaconchain ETH staking data",
+    RATED_API_KEY: "Rated.network validator performance data",
+  };
+
+  const missingSourceKeys = Object.entries(sourceKeyStatus)
+    .filter(([key]) => !process.env[key])
+    .map(([key, desc]) => `${key} → ${desc}`);
+
+  if (missingSourceKeys.length > 0) {
+    logger.warn(
+      {
+        missingKeys: missingSourceKeys.length,
+        totalKeys: Object.keys(sourceKeyStatus).length,
+      },
+      `Missing ${missingSourceKeys.length} data source API key(s) — some endpoints will return limited or no data:\n${missingSourceKeys.map((k) => `  • ${k}`).join("\n")}`,
+    );
+  }
+
   logger.info(
     {
       port: env.PORT,
       env: env.NODE_ENV,
       redis: !!env.REDIS_URL,
+      gcp: !!env.GCP_PROJECT_ID,
       aiProviders: aiKeys.length,
+      sourceKeysConfigured: Object.keys(sourceKeyStatus).length - missingSourceKeys.length,
+      sourceKeysTotal: Object.keys(sourceKeyStatus).length,
     },
     "Environment validated",
   );

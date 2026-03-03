@@ -16,6 +16,7 @@ import {
   type ApiTier,
   type KeyEntry,
 } from "@/lib/auth";
+import { GenerateKeySchema, validateBody } from "@/lib/validation";
 
 // ─── Router ──────────────────────────────────────────────────
 
@@ -28,14 +29,9 @@ keysRoutes.post("/api/keys", requireAdmin(), async (c) => {
 
   const contentType = c.req.header("content-type") || "";
   if (contentType.includes("application/json")) {
-    try {
-      const body = await c.req.json<{ tier?: string }>();
-      if (body.tier === "pro" || body.tier === "basic" || body.tier === "enterprise") {
-        tier = body.tier;
-      }
-    } catch {
-      return c.json({ error: "INVALID_JSON", message: "Could not parse request body." }, 400);
-    }
+    const parsed = await validateBody(c, GenerateKeySchema);
+    if (!parsed.success) return parsed.error;
+    tier = parsed.data.tier;
   }
 
   const newKey = `cv_${tier}_${crypto.randomBytes(24).toString("hex")}`;

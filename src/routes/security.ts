@@ -12,6 +12,13 @@
 
 import { Hono } from "hono";
 import * as goplus from "../sources/goplus.js";
+import {
+  HexAddressSchema,
+  UrlSchema,
+  validateParam,
+  validateQuery,
+} from "../lib/validation.js";
+import { ApiError } from "../lib/api-error.js";
 
 export const securityRoutes = new Hono();
 
@@ -35,11 +42,12 @@ function resolveChainId(param: string): number {
 
 securityRoutes.get("/token/:chainId/:address", async (c) => {
   const chainId = resolveChainId(c.req.param("chainId"));
-  const address = c.req.param("address");
-
   if (!chainId || isNaN(chainId)) {
     return c.json({ error: "Invalid chain ID. Use number or name (ethereum, bsc, polygon, etc.)" }, 400);
   }
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data;
 
   const { result } = await goplus.getTokenSecurity(chainId, [address]);
   const token = result[address.toLowerCase()];
@@ -96,7 +104,12 @@ securityRoutes.get("/token/:chainId/:address", async (c) => {
 
 securityRoutes.get("/address/:chainId/:address", async (c) => {
   const chainId = resolveChainId(c.req.param("chainId"));
-  const address = c.req.param("address");
+  if (!chainId || isNaN(chainId)) {
+    return c.json({ error: "Invalid chain ID. Use number or name (ethereum, bsc, polygon, etc.)" }, 400);
+  }
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data;
 
   const { result } = await goplus.getAddressSecurity(chainId, address);
 
@@ -128,7 +141,12 @@ securityRoutes.get("/address/:chainId/:address", async (c) => {
 
 securityRoutes.get("/nft/:chainId/:address", async (c) => {
   const chainId = resolveChainId(c.req.param("chainId"));
-  const address = c.req.param("address");
+  if (!chainId || isNaN(chainId)) {
+    return c.json({ error: "Invalid chain ID. Use number or name (ethereum, bsc, polygon, etc.)" }, 400);
+  }
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data;
 
   const { result } = await goplus.getNFTSecurity(chainId, address);
 
@@ -151,8 +169,9 @@ securityRoutes.get("/nft/:chainId/:address", async (c) => {
 // ─── GET /api/security/dapp ──────────────────────────────────
 
 securityRoutes.get("/dapp", async (c) => {
-  const url = c.req.query("url");
-  if (!url) return c.json({ error: "url parameter required" }, 400);
+  const urlResult = validateQuery(c, "url", UrlSchema);
+  if (!urlResult.success) return urlResult.error;
+  const url = urlResult.data;
 
   const { result } = await goplus.getDappSecurity(url);
 
@@ -187,7 +206,12 @@ securityRoutes.get("/chains", async (c) => {
 
 securityRoutes.get("/approval/:chainId/:address", async (c) => {
   const chainId = resolveChainId(c.req.param("chainId"));
-  const address = c.req.param("address").toLowerCase();
+  if (!chainId || isNaN(chainId)) {
+    return c.json({ error: "Invalid chain ID. Use number or name (ethereum, bsc, polygon, etc.)" }, 400);
+  }
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data.toLowerCase();
   const { result } = await goplus.getApprovalSecurity(chainId, address);
 
   const approvals = Object.entries(result || {}).map(([addr, info]: [string, any]) => ({
@@ -208,13 +232,4 @@ securityRoutes.get("/approval/:chainId/:address", async (c) => {
     source: "goplus",
     timestamp: new Date().toISOString(),
   });
-});
-
-// ─── GET /api/security/approval/:chainId/:address ────────────
-
-securityRoutes.get("/approval/:chainId/:address", async (c) => {
-  const chainId = resolveChainId(c.req.param("chainId"));
-  const address = c.req.param("address");
-  const data = await goplus.getApprovalSecurity(chainId, address);
-  return c.json({ chainId, address, data, timestamp: new Date().toISOString() });
 });

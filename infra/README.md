@@ -107,7 +107,13 @@ kustomize edit set image crypto-vision=your-registry/crypto-vision:latest
 kubectl apply -k infra/k8s/
 ```
 
-Includes: Deployment, Service, Ingress, HPA (2→20 pods), Redis, 7 CronJobs.
+Includes: Deployment, Service, Ingress, HPA (2-20 pods), Redis, 7 CronJobs, PodDisruptionBudget, NetworkPolicies.
+
+Optionally enable persistent Redis storage:
+```bash
+kubectl apply -f infra/k8s/redis-pvc.yml
+# Then uncomment redis-pvc.yml in kustomization.yml
+```
 
 GitHub Actions workflow: `.github/workflows/deploy-k8s.yml`
 
@@ -130,6 +136,15 @@ terraform init && terraform plan && terraform apply
 
 Provisions: Cloud Run, Artifact Registry, Memorystore Redis (with AUTH), VPC connector, Secret Manager, Cloud Scheduler, domain mapping, monitoring alerts.
 
+Cloud Build uses **canary deploys**: new revision gets 0% traffic first, health check verifies, then promotes to 100%.
+
+#### Teardown
+```bash
+export GCP_PROJECT=your-project-id
+bash infra/teardown.sh
+```
+Requires confirmation. Deletes all resources in reverse order.
+
 ---
 
 ## CI/CD Workflows
@@ -139,7 +154,8 @@ Provisions: Cloud Run, Artifact Registry, Memorystore Redis (with AUTH), VPC con
 | **CI** | `.github/workflows/ci.yml` | — | Push/PR to master |
 | **Deploy GCP** | `.github/workflows/deploy.yml` | Cloud Run | Push to master |
 | **Deploy K8s** | `.github/workflows/deploy-k8s.yml` | Any K8s cluster | Manual dispatch |
-| **Cloud Build** | `cloudbuild.yaml` | Cloud Run | GCP trigger |
+| **Rollback** | `.github/workflows/rollback.yml` | Cloud Run | Manual dispatch |
+| **Cloud Build** | `cloudbuild.yaml` | Cloud Run (canary) | GCP trigger |
 
 ### GCP Deploy — Required GitHub Secrets
 
@@ -224,6 +240,8 @@ No application code changes required. Total migration time: ~1 hour.
 | `redis.yml` | Redis deployment + service |
 | `hpa.yml` | Horizontal Pod Autoscaler (2→20) |
 | `cronjobs.yml` | 7 cache-warming cron jobs |
+| `policies.yml` | PodDisruptionBudget + NetworkPolicies |
+| `redis-pvc.yml` | Optional persistent Redis storage |
 | `secrets.example.yml` | Secret template |
 
 ---

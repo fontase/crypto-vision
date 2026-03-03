@@ -16,6 +16,15 @@
 
 import { Hono } from "hono";
 import * as gt from "../sources/geckoterminal.js";
+import {
+  ChainSlugSchema,
+  HexAddressSchema,
+  TimeframeSchema,
+  SearchQuerySchema,
+  LimitSchema,
+  validateParam,
+  validateQuery,
+} from "../lib/validation.js";
 
 export const dexRoutes = new Hono();
 
@@ -56,12 +65,15 @@ dexRoutes.get("/trending-pools", async (c) => {
 });
 
 dexRoutes.get("/trending-pools/:network", async (c) => {
-  const { data } = await gt.getTrendingPools(c.req.param("network"));
+  const netResult = validateParam(c, "network", ChainSlugSchema);
+  if (!netResult.success) return netResult.error;
+  const network = netResult.data;
+  const { data } = await gt.getTrendingPools(network);
 
   return c.json({
     data: data.map((p) => ({
       id: p.id,
-      name: p.attributes.name,
+      name: pnetwork
       address: p.attributes.address,
       priceUsd: p.attributes.base_token_price_usd,
       fdvUsd: p.attributes.fdv_usd,
@@ -95,10 +107,13 @@ dexRoutes.get("/new-pools", async (c) => {
 });
 
 dexRoutes.get("/new-pools/:network", async (c) => {
-  const { data } = await gt.getNewPools(c.req.param("network"));
+  const netResult = validateParam(c, "network", ChainSlugSchema);
+  if (!netResult.success) return netResult.error;
+  const network = netResult.data;
+  const { data } = await gt.getNewPools(network);
 
   return c.json({
-    data: data.map((p) => ({
+    data: datnetwork
       id: p.id,
       name: p.attributes.name,
       address: p.attributes.address,
@@ -115,10 +130,13 @@ dexRoutes.get("/new-pools/:network", async (c) => {
 // ─── GET /api/dex/top-pools/:network ─────────────────────────
 
 dexRoutes.get("/top-pools/:network", async (c) => {
-  const { data } = await gt.getTopPools(c.req.param("network"));
+  const netResult = validateParam(c, "network", ChainSlugSchema);
+  if (!netResult.success) return netResult.error;
+  const network = netResult.data;
+  const { data } = await gt.getTopPools(network);
 
   return c.json({
-    data: data.map((p) => ({
+    data: datnetwork
       id: p.id,
       name: p.attributes.name,
       address: p.attributes.address,
@@ -135,9 +153,15 @@ dexRoutes.get("/top-pools/:network", async (c) => {
 // ─── GET /api/dex/pool/:network/:address ─────────────────────
 
 dexRoutes.get("/pool/:network/:address", async (c) => {
-  const network = c.req.param("network");
-  const address = c.req.param("address");
-  const tf = (c.req.query("timeframe") as "day" | "hour" | "minute") || "hour";
+  const netResult = validateParam(c, "network", ChainSlugSchema);
+  if (!netResult.success) return netResult.error;
+  const network = netResult.data;
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data;
+  const tfResult = validateQuery(c, "timeframe", TimeframeSchema.default("hour"));
+  if (!tfResult.success) return tfResult.error;
+  const tf = tfResult.data;
   const limit = Math.min(Number(c.req.query("limit") || 100), 1000);
 
   const { data } = await gt.getPoolOHLCV(network, address, tf, 1, limit);
@@ -163,8 +187,12 @@ dexRoutes.get("/pool/:network/:address", async (c) => {
 // ─── GET /api/dex/token/:network/:address ────────────────────
 
 dexRoutes.get("/token/:network/:address", async (c) => {
-  const network = c.req.param("network");
-  const address = c.req.param("address");
+  const netResult = validateParam(c, "network", ChainSlugSchema);
+  if (!netResult.success) return netResult.error;
+  const network = netResult.data;
+  const addrResult = validateParam(c, "address", HexAddressSchema);
+  if (!addrResult.success) return addrResult.error;
+  const address = addrResult.data;
 
   const [tokenRes, poolsRes] = await Promise.all([
     gt.getTokenInfo(network, address).catch(() => null),
@@ -200,8 +228,9 @@ dexRoutes.get("/token/:network/:address", async (c) => {
 // ─── GET /api/dex/pool-search ────────────────────────────────
 
 dexRoutes.get("/pool-search", async (c) => {
-  const q = c.req.query("q");
-  if (!q) return c.json({ error: "q parameter required" }, 400);
+  const qResult = validateQuery(c, "q", SearchQuerySchema);
+  if (!qResult.success) return qResult.error;
+  const q = qResult.data;
 
   const { data } = await gt.searchPools(q);
 
