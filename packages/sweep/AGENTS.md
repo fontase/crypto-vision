@@ -13,6 +13,22 @@ sweep is built with Solidity. See the README for full documentation.
 - **Ship production-quality code** — write thorough tests, handle edge cases, add meaningful error messages, and document public APIs.
 - **Think big, execute precisely** — propose ambitious improvements but implement them carefully and incrementally.
 
+### No Mocks, No Fakes, No Stubs
+
+- **Always write full, real implementations** — never use placeholder data, mock responses, fake APIs, TODO stubs, or hardcoded dummy values.
+- **Connect to real services** — if a feature calls a contract or API, implement the actual client with proper error handling, retries, and timeouts.
+- **No "coming soon" or empty shells** — every function must do real work. If a dependency isn't available yet, build the adapter so it's ready to plug in.
+- **No `// TODO: implement later`** — if you write a function signature, implement it fully right now. We have the credits. Do the work.
+- **Tests use real logic** — test against actual behavior, not mocked internals. Use fork tests with real on-chain state where possible.
+
+### Code Quality Standards
+
+- **Solidity best practices** — follow Checks-Effects-Interactions, use custom errors over require strings, NatSpec all public functions.
+- **Error handling everywhere** — every external call needs try/catch or checked return values, every edge case needs a code path.
+- **Consistent patterns** — follow existing code conventions. If the codebase uses a pattern, replicate it. Don't introduce competing paradigms.
+- **Self-documenting code** — prefer clear naming over comments. When comments are needed, explain *why*, not *what*.
+- **DRY but not over-abstracted** — extract shared logic into libraries, but don't create abstractions for single-use cases.
+
 ### Continuous Improvement Mindset
 
 Every time you touch a file, ask yourself:
@@ -37,6 +53,14 @@ If you see something broken or improvable while working on something else, **fix
 - **Always verify your changes compile** — run `forge build` after Solidity changes.
 - **Always run tests** — run `forge test` (or the appropriate test command) after changes to ensure nothing is broken.
 - **If a build or test fails, fix it immediately** — never leave the codebase in a broken state.
+
+### Completion & Follow-Through
+
+- **Finish what you start** — don't leave partial implementations. If you open a file to change one thing and notice three others, fix all four.
+- **Verify end-to-end** — after implementing a feature, trace the full path: deploy → call → verify state. Confirm it works.
+- **Run the full test suite** — don't just test the file you changed. Run all tests to catch regressions.
+- **Check for orphans** — after refactoring, ensure no dead imports, unused libraries, or dangling references remain.
+- **Update docs and interfaces** — if you change a contract, update the ABI, README, interface definitions, and any consuming code.
 
 ### Git Identity
 

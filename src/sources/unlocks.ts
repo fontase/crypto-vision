@@ -155,11 +155,10 @@ export async function getTrackedEmissions(): Promise<any[]> {
   );
 
   return results
-    .filter((r) => r.status === "fulfilled")
-    .map((r) => {
-      const fulfilled = r as PromiseFulfilledResult<{ protocol: typeof TRACKED_PROTOCOLS[number]; data: any }>;
-      return fulfilled.value;
-    })
+    .filter((r): r is PromiseFulfilledResult<{ protocol: string; data: any }> =>
+      r.status === "fulfilled",
+    )
+    .map((r) => r.value)
     .filter((v) => !!v.data);
 }
 

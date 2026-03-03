@@ -24,6 +24,12 @@ export default defineConfig({
       provider: "v8",
       include: ["src/lib/**/*.ts", "src/routes/**/*.ts"],
       exclude: ["**/*.test.ts", "**/__tests__/**"],
+      thresholds: {
+        statements: 50,
+        branches: 40,
+        functions: 45,
+        lines: 50,
+      },
     },
   },
 });

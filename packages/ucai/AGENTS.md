@@ -13,6 +13,22 @@ UCAI is built with Python. See the README for full documentation.
 - **Ship production-quality code** — write thorough tests, handle edge cases, add meaningful error messages, and document public APIs.
 - **Think big, execute precisely** — propose ambitious improvements but implement them carefully and incrementally.
 
+### No Mocks, No Fakes, No Stubs
+
+- **Always write full, real implementations** — never use placeholder data, mock responses, fake APIs, TODO stubs, or hardcoded dummy values.
+- **Connect to real services** — if a feature calls an API, implement the actual HTTP client with proper error handling, retries, and timeouts.
+- **No "coming soon" or empty shells** — every function must do real work. If a dependency isn't available yet, build the adapter so it's ready to plug in.
+- **No `# TODO: implement later`** — if you write a function signature, implement it fully right now. We have the credits. Do the work.
+- **Tests use real logic** — test against actual behavior, not mocked internals. Use integration tests with real data flows where possible.
+
+### Code Quality Standards
+
+- **Python strict typing** — use type hints everywhere, no `Any` types, run mypy/pyright checks.
+- **Error handling everywhere** — every async call needs try/except, every API response needs validation, every edge case needs a code path.
+- **Consistent patterns** — follow existing code conventions. If the codebase uses a pattern, replicate it. Don't introduce competing paradigms.
+- **Self-documenting code** — prefer clear naming over comments. When comments are needed, explain *why*, not *what*.
+- **DRY but not over-abstracted** — extract shared logic into helpers, but don't create abstractions for single-use cases.
+
 ### Continuous Improvement Mindset
 
 Every time you touch a file, ask yourself:
@@ -37,6 +53,14 @@ If you see something broken or improvable while working on something else, **fix
 - **Always verify your changes compile** — run the appropriate build/lint command after changes.
 - **Always run tests** — run `pytest` (or the appropriate test command) after changes to ensure nothing is broken.
 - **If a build or test fails, fix it immediately** — never leave the codebase in a broken state.
+
+### Completion & Follow-Through
+
+- **Finish what you start** — don't leave partial implementations. If you open a file to change one thing and notice three others, fix all four.
+- **Verify end-to-end** — after implementing a feature, trace the full path. Confirm it works.
+- **Run the full test suite** — don't just test the file you changed. Run all tests to catch regressions.
+- **Check for orphans** — after refactoring, ensure no dead imports, unused exports, or dangling references remain.
+- **Update docs and types** — if you change an API, update the spec, README, type definitions, and any consuming code.
 
 ### Git Identity
 

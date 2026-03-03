@@ -123,8 +123,8 @@ export const cache = {
           mem.set(key, parsed, Math.max(ttl, 10));
           return parsed;
         }
-      } catch {
-        // Redis read failure — not critical
+      } catch (err) {
+        logger.warn({ key, err: (err as Error).message }, "Redis read failure — falling back to memory");
       }
     }
 
@@ -142,8 +142,8 @@ export const cache = {
     if (r) {
       try {
         await r.set(`cv:${key}`, JSON.stringify(value), "EX", ttlSeconds);
-      } catch {
-        // Redis write failure — not critical
+      } catch (err) {
+        logger.warn({ key, err: (err as Error).message }, "Redis write failure — memory-only cache");
       }
     }
   },
@@ -180,7 +180,9 @@ export const cache = {
           mem.set(key, parsed, ttlSeconds);
           return parsed;
         }
-      } catch { /* Redis miss */ }
+      } catch (err) {
+        logger.warn({ key, err: (err as Error).message }, "Redis read failure in wrap — cold miss path");
+      }
     }
 
     // Cold miss — single-flight fetch
@@ -204,7 +206,11 @@ export const cache = {
   async del(key: string): Promise<void> {
     mem.delete(key);
     const r = await getRedis();
-    if (r) { try { await r.del(`cv:${key}`); } catch { /* noop */ } }
+    if (r) {
+      try { await r.del(`cv:${key}`); } catch (err) {
+        logger.warn({ key, err: (err as Error).message }, "Redis del failure");
+      }
+    }
   },
 
   /** Stats for /health — includes hit rate metrics for observability. */

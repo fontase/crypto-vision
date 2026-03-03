@@ -98,10 +98,14 @@ export function globalErrorHandler(err: Error, c: Context) {
       { source: upstreamSource, status, path: c.req.path, err: err.message },
       `Upstream error: ${upstreamSource}`,
     );
+    // Never expose upstream provider hostnames to clients
+    const safeMessage = status === 429
+      ? "Upstream rate limited — please retry later"
+      : "An upstream data source is temporarily unavailable";
     return apiError(c, {
       code: "UPSTREAM_ERROR",
-      message: `Upstream service error: ${upstreamSource}`,
-      details: process.env.NODE_ENV !== "production" ? err.message : undefined,
+      message: safeMessage,
+      details: process.env.NODE_ENV !== "production" ? `${upstreamSource}: ${err.message}` : undefined,
       retryAfter: status === 429 ? 30 : 5,
     });
   }
