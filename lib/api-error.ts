@@ -214,3 +214,27 @@ export const ApiError = {
   aiError: (c: Context, message: string, details?: unknown) =>
     apiError(c, { code: "AI_SERVICE_ERROR", message, details }),
 };
+
+// ─── Throwable Error Class ───────────────────────────────────
+
+/**
+ * Throwable API error — throw from any route handler and the global
+ * error handler will catch it and return a structured ApiErrorResponse.
+ *
+ * Usage:  throw new AppError("NOT_FOUND", "Coin not found");
+ */
+export class AppError extends Error {
+  readonly code: ErrorCode;
+  readonly statusCode: number;
+  readonly details?: unknown;
+  readonly retryAfter?: number;
+
+  constructor(code: ErrorCode, message: string, opts?: { details?: unknown; retryAfter?: number }) {
+    super(message);
+    this.name = "AppError";
+    this.code = code;
+    this.statusCode = ERROR_STATUS_MAP[code] || 500;
+    this.details = opts?.details;
+    this.retryAfter = opts?.retryAfter;
+  }
+}

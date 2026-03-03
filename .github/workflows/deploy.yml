@@ -1,0 +1,153 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: us-central1
+  SERVICE_NAME: crypto-vision
+  VPC_CONNECTOR: crypto-vision-vpc
+  SERVICE_ACCOUNT: crypto-vision-run
+
+jobs:
+  # ── Quality Gates ────────────────────────────────────────────
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  # ── Deploy to Cloud Run ────────────────────────────────────
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Authenticate to GCP via Workload Identity Federation (preferred)
+      # Fallback: use service account key JSON
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+          # Alternative: credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build container image
+        run: |
+          docker build \
+            -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest \
+            .
+
+      - name: Push container image
+        run: |
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated \
+            --port=8080 \
+            --memory=1Gi \
+            --cpu=2 \
+            --min-instances=1 \
+            --max-instances=20 \
+            --timeout=60s \
+            --concurrency=200 \
+            --vpc-connector=projects/${{ env.PROJECT_ID }}/locations/${{ env.REGION }}/connectors/${{ env.VPC_CONNECTOR }} \
+            --vpc-egress=private-ranges-only \
+            --service-account=${{ env.SERVICE_ACCOUNT }}@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+            --set-env-vars=NODE_ENV=production,COINGECKO_PRO=true \
+            --set-secrets=COINGECKO_API_KEY=COINGECKO_API_KEY:latest,GROQ_API_KEY=GROQ_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,REDIS_URL=REDIS_URL:latest \
+            --quiet
+
+      - name: Verify deployment
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "Service URL: ${SERVICE_URL}"
+
+          # Health check with retries
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${SERVICE_URL}/health" || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "✓ Health check passed"
+              curl -s "${SERVICE_URL}/health" | head -c 500
+              exit 0
+            fi
+            echo "Attempt ${i}/5 — status ${STATUS}, retrying in 10s..."
+            sleep 10
+          done
+          echo "✗ Health check failed after 5 attempts"
+          exit 1
+
+      - name: Post deployment URL
+        if: success()
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "### 🚀 Deployed to Cloud Run" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ env.SERVICE_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **URL** | ${SERVICE_URL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Region** | ${{ env.REGION }} |" >> $GITHUB_STEP_SUMMARY

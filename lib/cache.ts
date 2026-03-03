@@ -211,4 +211,12 @@ export const cache = {
       inflightRequests: inflight.size,
     };
   },
+
+  /** Disconnect Redis for graceful shutdown. */
+  async disconnect(): Promise<void> {
+    if (redis) {
+      try { await redis.quit(); } catch { /* best-effort */ }
+      redis = null;
+    }
+  },
 };

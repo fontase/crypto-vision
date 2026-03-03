@@ -10,6 +10,8 @@
 #   _CPU            — vCPUs per instance (default: 2)
 #   _MIN_INSTANCES  — Min instances to keep warm (default: 1)
 #   _MAX_INSTANCES  — Max instances (default: 20)
+#   _VPC_CONNECTOR  — VPC connector for Redis (default: crypto-vision-vpc)
+#   _SERVICE_ACCOUNT — Cloud Run service account
 
 substitutions:
   _SERVICE_NAME: crypto-vision
@@ -18,10 +20,40 @@ substitutions:
   _CPU: "2"
   _MIN_INSTANCES: "1"
   _MAX_INSTANCES: "20"
+  _VPC_CONNECTOR: crypto-vision-vpc
+  _SERVICE_ACCOUNT: crypto-vision-run
 
 steps:
-  # Build container image
+  # ── 1. Install dependencies ────────────────────────────────
+  - name: node:22-alpine
+    id: install
+    entrypoint: npm
+    args: ["ci"]
+
+  # ── 2. Typecheck ───────────────────────────────────────────
+  - name: node:22-alpine
+    id: typecheck
+    entrypoint: npm
+    args: ["run", "typecheck"]
+    waitFor: ["install"]
+
+  # ── 3. Lint ────────────────────────────────────────────────
+  - name: node:22-alpine
+    id: lint
+    entrypoint: npm
+    args: ["run", "lint"]
+    waitFor: ["install"]
+
+  # ── 4. Test ────────────────────────────────────────────────
+  - name: node:22-alpine
+    id: test
+    entrypoint: npm
+    args: ["run", "test"]
+    waitFor: ["install"]
+
+  # ── 5. Build container image ───────────────────────────────
   - name: gcr.io/cloud-builders/docker
+    id: build
     args:
       - build
       - -t
@@ -29,16 +61,20 @@ steps:
       - -t
       - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
       - .
+    waitFor: ["typecheck", "lint", "test"]
 
-  # Push to Container Registry
+  # ── 6. Push to Container Registry ─────────────────────────
   - name: gcr.io/cloud-builders/docker
+    id: push
     args:
       - push
       - --all-tags
       - gcr.io/$PROJECT_ID/${_SERVICE_NAME}
+    waitFor: ["build"]
 
-  # Deploy to Cloud Run
+  # ── 7. Deploy to Cloud Run ────────────────────────────────
   - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy
     entrypoint: gcloud
     args:
       - run
@@ -53,9 +89,14 @@ steps:
       - --cpu=${_CPU}
       - --min-instances=${_MIN_INSTANCES}
       - --max-instances=${_MAX_INSTANCES}
-      - --set-env-vars=NODE_ENV=production
       - --timeout=60s
       - --concurrency=200
+      - --vpc-connector=projects/$PROJECT_ID/locations/${_REGION}/connectors/${_VPC_CONNECTOR}
+      - --vpc-egress=private-ranges-only
+      - --service-account=${_SERVICE_ACCOUNT}@$PROJECT_ID.iam.gserviceaccount.com
+      - --set-env-vars=NODE_ENV=production,COINGECKO_PRO=true
+      - --set-secrets=COINGECKO_API_KEY=COINGECKO_API_KEY:latest,GROQ_API_KEY=GROQ_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest,REDIS_URL=REDIS_URL:latest
+    waitFor: ["push"]
 
 images:
   - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA
@@ -63,3 +104,5 @@ images:
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s

@@ -11,6 +11,7 @@
 
 import type { Context, Next } from "hono";
 import { logger } from "./logger.js";
+import { TIER_LIMITS, type ApiTier } from "./auth.js";
 
 // ─── In-Memory Backend ───────────────────────────────────────
 
@@ -90,12 +91,22 @@ const DEFAULT_CONFIG: RateLimitConfig = { limit: 200, windowSeconds: 60, prefix:
 // ─── Middleware ───────────────────────────────────────────────
 
 export function rateLimit(config: Partial<RateLimitConfig> = {}) {
-  const { limit, windowSeconds, prefix } = { ...DEFAULT_CONFIG, ...config };
-  const windowMs = windowSeconds * 1000;
+  const { limit: defaultLimit, windowSeconds: defaultWindow, prefix } = { ...DEFAULT_CONFIG, ...config };
 
   return async (c: Context, next: Next) => {
+    // Dynamic limits: prefer tier-based config from apiKeyAuth middleware
+    const tier = c.get("apiTier") as ApiTier | undefined;
+    const tierCfg = tier ? TIER_LIMITS[tier] : undefined;
+
+    const limit = tierCfg?.rateLimit ?? defaultLimit;
+    const windowSeconds = tierCfg?.windowSeconds ?? defaultWindow;
+    const windowMs = windowSeconds * 1000;
+
     const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() || c.req.header("x-real-ip") || "unknown";
-    const key = `${prefix}:${ip}`;
+    const apiKey = (c.get("apiKey") as string | undefined) || "anonymous";
+    // Keyed users are rate-limited per key; anonymous users per IP
+    const identity = apiKey !== "anonymous" ? `key:${apiKey}` : `ip:${ip}`;
+    const key = `${prefix}:${identity}`;
 
     let result = await incrementRedis(key, windowMs);
     if (!result) result = await incrementMemory(key, windowSeconds);
@@ -106,11 +117,12 @@ export function rateLimit(config: Partial<RateLimitConfig> = {}) {
     c.header("X-RateLimit-Limit", String(limit));
     c.header("X-RateLimit-Remaining", String(remaining));
     c.header("X-RateLimit-Reset", String(Math.ceil(resetAt / 1000)));
+    if (tier) c.header("X-RateLimit-Tier", tier);
 
     if (count > limit) {
       const retryAfter = Math.ceil((resetAt - Date.now()) / 1000);
       c.header("Retry-After", String(retryAfter));
-      return c.json({ error: "RATE_LIMIT_EXCEEDED", message: `Too many requests. Limit: ${limit} per ${windowSeconds}s`, retryAfter }, 429);
+      return c.json({ error: "RATE_LIMIT_EXCEEDED", message: `Too many requests. Limit: ${limit} per ${windowSeconds}s (tier: ${tier || "default"})`, retryAfter }, 429);
     }
 
     await next();

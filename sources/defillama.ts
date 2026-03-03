@@ -199,3 +199,128 @@ export function getRaises(): Promise<{
     fetchJSON(`${API}/raises`)
   );
 }
+
+// ─── Hacks ───────────────────────────────────────────────────
+
+export function getHacks(): Promise<Array<{
+  id: number;
+  name: string;
+  date: number;
+  amount: number;
+  chains: string[];
+  classification: string;
+  technique: string;
+  bridge: boolean;
+  target: string;
+  link: string;
+}>> {
+  return cache.wrap("llama:hacks", 1800, () =>
+    fetchJSON(`${API}/hacks`)
+  );
+}
+
+// ─── Options Volume ──────────────────────────────────────────
+
+export function getOptionsVolume(): Promise<{
+  totalDataChart: [number, number][];
+  protocols: Array<{
+    name: string;
+    total24h: number;
+    total7d: number;
+    total30d: number;
+    change_1d: number;
+  }>;
+}> {
+  return cache.wrap("llama:options", 300, () =>
+    fetchJSON(`${API}/overview/options`)
+  );
+}
+
+// ─── Derivatives / Perpetuals Volume ─────────────────────────
+
+export function getDerivativesVolume(): Promise<{
+  totalDataChart: [number, number][];
+  protocols: Array<{
+    name: string;
+    total24h: number;
+    total7d: number;
+    total30d: number;
+    change_1d: number;
+  }>;
+}> {
+  return cache.wrap("llama:derivatives", 300, () =>
+    fetchJSON(`${API}/overview/derivatives`)
+  );
+}
+
+// ─── Historical Total TVL ────────────────────────────────────
+
+export function getHistoricalTVL(): Promise<Array<{
+  date: number;
+  tvl: number;
+}>> {
+  return cache.wrap("llama:total-tvl", 600, () =>
+    fetchJSON(`${API}/v2/historicalChainTvl`)
+  );
+}
+
+// ─── Protocol Treasuries ─────────────────────────────────────
+
+export function getTreasuries(): Promise<Array<{
+  id: string;
+  name: string;
+  tokenBreakdowns: Record<string, Record<string, number>>;
+  ownTokens: number;
+  stablecoins: number;
+  majors: number;
+  others: number;
+  total: number;
+}>> {
+  return cache.wrap("llama:treasuries", 1800, () =>
+    fetchJSON(`${API}/treasury`)
+  );
+}
+
+// ─── NFT Collections ────────────────────────────────────────
+
+export function getNFTCollections(): Promise<Array<{
+  name: string;
+  displayName: string;
+  totalVolumeUSD: number;
+  dailyVolumeUSD: number;
+  floorPriceUSD: number;
+  owners: number;
+  collections: number;
+}>> {
+  return cache.wrap("llama:nft-collections", 600, () =>
+    fetchJSON(`${API}/nfts/marketplaces`)
+  );
+}
+
+// ─── Revenue ─────────────────────────────────────────────────
+
+export function getRevenue(): Promise<{
+  protocols: Array<{
+    name: string;
+    total24h: number;
+    total7d: number;
+    total30d: number;
+    category: string;
+  }>;
+}> {
+  return cache.wrap("llama:revenue", 300, () =>
+    fetchJSON(`${API}/overview/fees?dataType=dailyRevenue`)
+  );
+}
+
+// ─── Liquidations ────────────────────────────────────────────
+
+export function getLiquidations(): Promise<Array<{
+  symbol: string;
+  openInterest: number;
+  liquidations24h: number;
+}>> {
+  return cache.wrap("llama:liquidations", 120, () =>
+    fetchJSON(`${API}/liquidations`)
+  );
+}

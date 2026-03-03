@@ -1,13 +1,25 @@
 /**
  * Crypto Vision — AI Intelligence Routes
  *
- * These routes provide AI-powered crypto analysis using structured prompts
- * and upstream data. Requires LLM API key (Google Gemini or OpenAI).
- *
- * GET  /api/ai/sentiment/:coin — AI sentiment analysis for a coin
- * GET  /api/ai/digest          — Daily market digest
- * GET  /api/ai/signals         — AI trading signal scan
- * POST /api/ai/ask             — Ask anything about crypto
+ * GET  /api/ai/sentiment/:coin   — AI sentiment analysis for a coin
+ * GET  /api/ai/digest            — Daily market digest
+ * GET  /api/ai/signals           — AI trading signal scan
+ * POST /api/ai/ask               — Ask anything about crypto
+ * GET  /api/ai/compare           — AI side-by-side coin comparison
+ * GET  /api/ai/explain/:topic    — AI crypto concept explainer
+ * GET  /api/ai/risk/:protocol    — AI DeFi risk assessment
+ * GET  /api/ai/yield-analysis    — AI yield opportunity analysis
+ * GET  /api/ai/portfolio-review  — AI portfolio allocation review
+ * GET  /api/ai/whale-alert       — AI whale activity analysis
+ * GET  /api/ai/narrative         — AI narrative/trend analysis
+ * GET  /api/ai/news-analysis     — AI news impact analysis
+ * GET  /api/ai/fear-greed-explain — AI Fear & Greed interpretation
+ * GET  /api/ai/chain-compare     — AI chain comparison
+ * GET  /api/ai/stablecoin-risk   — AI stablecoin risk analysis
+ * GET  /api/ai/defi-overview     — AI DeFi market overview
+ * GET  /api/ai/market-regime     — AI market regime detection
+ * GET  /api/ai/correlation       — AI correlation analysis
+ * GET  /api/ai/providers         — List configured AI providers
  */
 
 import { Hono } from "hono";
@@ -18,6 +30,7 @@ import * as cg from "../sources/coingecko.js";
 import * as llama from "../sources/defillama.js";
 import * as alt from "../sources/alternative.js";
 import { log } from "../lib/logger.js";
+import { ApiError, AppError } from "../lib/api-error.js";
 
 export const aiRoutes = new Hono();
 
@@ -36,7 +49,7 @@ aiRoutes.get("/sentiment/:coin", async (c) => {
   ]);
 
   if (!detail) {
-    return c.json({ error: `Coin '${coinId}' not found` }, 404);
+    return ApiError.notFound(c, `Coin '${coinId}' not found`);
   }
 
   const md = detail.market_data;
@@ -84,9 +97,11 @@ Respond in JSON with this exact structure:
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    if (err.name === "QueueFullError") return c.json({ error: "Service busy", retryAfter: 5 }, 503);
+    if (err.name === "QueueFullError") {
+      return ApiError.serviceUnavailable(c, "AI service busy — please retry");
+    }
     log.error({ err }, "AI sentiment failed");
-    return c.json({ error: err.message }, 500);
+    return ApiError.aiError(c, "AI sentiment analysis failed", err.message);
   }
 });
 
@@ -146,9 +161,11 @@ Respond in JSON:
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    if (err.name === "QueueFullError") return c.json({ error: "Service busy", retryAfter: 5 }, 503);
+    if (err.name === "QueueFullError") {
+      return ApiError.serviceUnavailable(c, "AI service busy — please retry");
+    }
     log.error({ err }, "AI digest failed");
-    return c.json({ error: err.message }, 500);
+    return ApiError.aiError(c, "AI digest generation failed", err.message);
   }
 });
 
@@ -220,9 +237,11 @@ Respond in JSON:
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    if (err.name === "QueueFullError") return c.json({ error: "Service busy", retryAfter: 5 }, 503);
+    if (err.name === "QueueFullError") {
+      return ApiError.serviceUnavailable(c, "AI service busy — please retry");
+    }
     log.error({ err }, "AI signals failed");
-    return c.json({ error: err.message }, 500);
+    return ApiError.aiError(c, "AI signals generation failed", err.message);
   }
 });
 
@@ -231,7 +250,7 @@ Respond in JSON:
 aiRoutes.post("/ask", async (c) => {
   const body = await c.req.json<{ question: string; context?: string }>();
   if (!body.question) {
-    return c.json({ error: "question field required" }, 400);
+    return ApiError.missingParam(c, "question");
   }
 
   // Fetch live context to enrich the answer
@@ -265,8 +284,10 @@ Question: ${body.question}`;
       timestamp: new Date().toISOString(),
     });
   } catch (err: any) {
-    if (err.name === "QueueFullError") return c.json({ error: "Service busy", retryAfter: 5 }, 503);
+    if (err.name === "QueueFullError") {
+      return ApiError.serviceUnavailable(c, "AI service busy — please retry");
+    }
     log.error({ err }, "AI ask failed");
-    return c.json({ error: err.message }, 500);
+    return ApiError.aiError(c, "AI question answering failed", err.message);
   }
 });

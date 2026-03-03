@@ -1,0 +1,2035 @@
+openapi: 3.1.0
+info:
+  title: Crypto Vision API
+  description: >
+    The complete cryptocurrency intelligence API. Aggregates data from CoinGecko,
+    DeFiLlama, DexScreener, RSS feeds, and LLM providers into a single,
+    high-performance endpoint.
+  version: 0.1.0
+  contact:
+    name: Crypto Vision
+    url: https://cryptocurrency.cv
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development
+  - url: https://cryptocurrency.cv
+    description: Production
+
+tags:
+  - name: Meta
+    description: Health checks and API metadata
+  - name: Market
+    description: Market data — coins, prices, charts, exchanges, and sentiment indices
+  - name: DeFi
+    description: DeFi analytics — protocols, yields, stablecoins, DEX volumes, fees, bridges, and raises
+  - name: News
+    description: Crypto news aggregation from RSS feeds
+  - name: On-Chain
+    description: On-chain data — gas prices, Bitcoin network stats, and token lookups
+  - name: AI
+    description: AI-powered crypto analysis — sentiment, digests, signals, and Q&A (requires LLM API key)
+
+paths:
+  # ──────────────────────────────────────────────────────────────
+  # Meta
+  # ──────────────────────────────────────────────────────────────
+  /:
+    get:
+      operationId: getRoot
+      summary: API info
+      description: Returns basic API metadata and links.
+      tags: [Meta]
+      responses:
+        "200":
+          description: API metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Crypto Vision
+                  description:
+                    type: string
+                    example: The complete cryptocurrency intelligence API
+                  version:
+                    type: string
+                    example: 0.1.0
+                  docs:
+                    type: string
+                    example: /api
+                  health:
+                    type: string
+                    example: /health
+                  website:
+                    type: string
+                    example: https://cryptocurrency.cv
+
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      description: Returns server health status, uptime, cache stats, and environment.
+      tags: [Meta]
+      responses:
+        "200":
+          description: Health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  uptime:
+                    type: number
+                    description: Server uptime in seconds
+                  timestamp:
+                    type: string
+                    format: date-time
+                  cache:
+                    type: object
+                    description: Cache hit/miss statistics
+                  env:
+                    type: string
+                    example: development
+
+  /api:
+    get:
+      operationId: getApiIndex
+      summary: API endpoint directory
+      description: Lists all available API endpoints grouped by area.
+      tags: [Meta]
+      responses:
+        "200":
+          description: Endpoint directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                  version:
+                    type: string
+                  endpoints:
+                    type: object
+                    description: Endpoints grouped by area (market, defi, news, onchain, ai)
+
+  # ──────────────────────────────────────────────────────────────
+  # Market Data
+  # ──────────────────────────────────────────────────────────────
+  /api/coins:
+    get:
+      operationId: getCoins
+      summary: Top coins by market cap
+      description: Returns a paginated list of coins sorted by market capitalisation with price, volume, and supply data.
+      tags: [Market]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 250
+          description: Results per page (max 250)
+        - name: order
+          in: query
+          schema:
+            type: string
+            default: market_cap_desc
+          description: Sort order (e.g. market_cap_desc, volume_desc)
+        - name: sparkline
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+            default: "false"
+          description: Include 7-day sparkline price array
+        - name: ids
+          in: query
+          schema:
+            type: string
+          description: Comma-separated CoinGecko coin IDs to filter
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+      responses:
+        "200":
+          description: Paginated list of coins
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CoinSummary"
+                  page:
+                    type: integer
+                  perPage:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/coin/{id}:
+    get:
+      operationId: getCoinDetail
+      summary: Coin detail
+      description: Returns full detail for a single coin including description, links, categories, and market data.
+      tags: [Market]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CoinGecko coin ID (e.g. bitcoin, ethereum)
+      responses:
+        "200":
+          description: Coin detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CoinDetail"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/price:
+    get:
+      operationId: getPrice
+      summary: Simple price lookup
+      description: Returns current prices for one or more coins in the requested fiat currencies.
+      tags: [Market]
+      parameters:
+        - name: ids
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Comma-separated CoinGecko coin IDs (e.g. bitcoin,ethereum)
+        - name: vs_currencies
+          in: query
+          schema:
+            type: string
+            default: usd
+          description: Comma-separated target currencies (e.g. usd,eur)
+      responses:
+        "200":
+          description: Price map
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      additionalProperties:
+                        type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Missing ids parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/trending:
+    get:
+      operationId: getTrending
+      summary: Trending coins
+      description: Returns the current trending coins on CoinGecko.
+      tags: [Market]
+      responses:
+        "200":
+          description: Trending coins list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TrendingCoin"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/global:
+    get:
+      operationId: getGlobal
+      summary: Global market stats
+      description: Returns aggregate cryptocurrency market statistics including total market cap, volume, and dominance.
+      tags: [Market]
+      responses:
+        "200":
+          description: Global market statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/GlobalMarket"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/search:
+    get:
+      operationId: searchCoins
+      summary: Search coins
+      description: Search for coins by name or symbol.
+      tags: [Market]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        symbol:
+                          type: string
+                        rank:
+                          type: integer
+                          nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Missing q parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/chart/{id}:
+    get:
+      operationId: getChart
+      summary: Price chart data
+      description: Returns historical price, market cap, and volume arrays for charting.
+      tags: [Market]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CoinGecko coin ID
+        - name: days
+          in: query
+          schema:
+            type: string
+            default: "7"
+          description: Number of days of data (1, 7, 14, 30, 90, 180, 365, max)
+        - name: interval
+          in: query
+          schema:
+            type: string
+          description: Data interval (e.g. daily)
+      responses:
+        "200":
+          description: Chart data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      prices:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+                          minItems: 2
+                          maxItems: 2
+                        description: "[timestamp_ms, price] pairs"
+                      marketCaps:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+                          minItems: 2
+                          maxItems: 2
+                        description: "[timestamp_ms, market_cap] pairs"
+                      volumes:
+                        type: array
+                        items:
+                          type: array
+                          items:
+                            type: number
+                          minItems: 2
+                          maxItems: 2
+                        description: "[timestamp_ms, volume] pairs"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/ohlc/{id}:
+    get:
+      operationId: getOHLC
+      summary: OHLC candles
+      description: Returns OHLC (Open, High, Low, Close) candlestick data for a coin.
+      tags: [Market]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CoinGecko coin ID
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 7
+          description: Number of days (1, 7, 14, 30, 90, 180, 365)
+      responses:
+        "200":
+          description: OHLC candle data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OHLCCandle"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/exchanges:
+    get:
+      operationId: getExchanges
+      summary: Exchange rankings
+      description: Returns a paginated list of cryptocurrency exchanges ranked by trust score.
+      tags: [Market]
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 250
+          description: Results per page (max 250)
+      responses:
+        "200":
+          description: Exchange list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Exchange"
+                  page:
+                    type: integer
+                  perPage:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/categories:
+    get:
+      operationId: getCategories
+      summary: Market categories
+      description: Returns all coin categories with market cap, volume, and top coins.
+      tags: [Market]
+      responses:
+        "200":
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/fear-greed:
+    get:
+      operationId: getFearGreed
+      summary: Fear & Greed Index
+      description: Returns the Crypto Fear & Greed Index (0 = extreme fear, 100 = extreme greed).
+      tags: [Market]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 1
+            maximum: 30
+          description: Number of historical data points (max 30)
+      responses:
+        "200":
+          description: Fear & Greed data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FearGreed"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/dex/search:
+    get:
+      operationId: dexSearch
+      summary: DEX token search
+      description: Search for DEX trading pairs via DexScreener.
+      tags: [Market]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query (token name, symbol, or address)
+      responses:
+        "200":
+          description: DEX pair search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DexPair"
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Missing q parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ──────────────────────────────────────────────────────────────
+  # DeFi
+  # ──────────────────────────────────────────────────────────────
+  /api/defi/protocols:
+    get:
+      operationId: getDefiProtocols
+      summary: Top DeFi protocols by TVL
+      description: Returns DeFi protocols sorted by Total Value Locked, with optional chain and category filters.
+      tags: [DeFi]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+          description: Max results (max 500)
+        - name: chain
+          in: query
+          schema:
+            type: string
+          description: Filter by chain name (e.g. Ethereum, Arbitrum)
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category (e.g. DEXes, Lending)
+      responses:
+        "200":
+          description: Protocol list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DefiProtocol"
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/protocol/{slug}:
+    get:
+      operationId: getDefiProtocolDetail
+      summary: Protocol detail with TVL history
+      description: Returns detailed info for a single DeFi protocol including per-chain TVL breakdown and 90-day TVL history.
+      tags: [DeFi]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          description: DeFiLlama protocol slug (e.g. aave, uniswap)
+      responses:
+        "200":
+          description: Protocol detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      symbol:
+                        type: string
+                      category:
+                        type: string
+                      chains:
+                        type: array
+                        items:
+                          type: string
+                      chainTvls:
+                        type: object
+                        additionalProperties:
+                          type: number
+                        description: TVL per chain
+                      tvlHistory:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: integer
+                            totalLiquidityUSD:
+                              type: number
+                        description: Last 90 data points
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/chains:
+    get:
+      operationId: getDefiChains
+      summary: Chain TVL rankings
+      description: Returns all chains ranked by Total Value Locked.
+      tags: [DeFi]
+      responses:
+        "200":
+          description: Chain TVL list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChainTVL"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/chain/{name}:
+    get:
+      operationId: getDefiChainHistory
+      summary: Chain TVL history
+      description: Returns up to 365 days of TVL history for a specific chain.
+      tags: [DeFi]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Chain name (e.g. Ethereum, Arbitrum)
+      responses:
+        "200":
+          description: Chain TVL history (last 365 data points)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: integer
+                        totalLiquidityUSD:
+                          type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/yields:
+    get:
+      operationId: getDefiYields
+      summary: Top yield opportunities
+      description: Returns DeFi yield pools sorted by APY with extensive filtering options.
+      tags: [DeFi]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+          description: Max results (max 500)
+        - name: chain
+          in: query
+          schema:
+            type: string
+          description: Filter by chain
+        - name: project
+          in: query
+          schema:
+            type: string
+          description: Filter by project name
+        - name: stablecoin
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+          description: Show only stablecoin pools
+        - name: min_tvl
+          in: query
+          schema:
+            type: number
+            default: 0
+          description: Minimum TVL in USD
+        - name: min_apy
+          in: query
+          schema:
+            type: number
+            default: 0
+          description: Minimum APY percentage
+      responses:
+        "200":
+          description: Yield pool list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/YieldPool"
+                  count:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/stablecoins:
+    get:
+      operationId: getDefiStablecoins
+      summary: Stablecoin market data
+      description: Returns stablecoins sorted by circulating supply with chain distribution.
+      tags: [DeFi]
+      responses:
+        "200":
+          description: Stablecoin list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Stablecoin"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/dex-volumes:
+    get:
+      operationId: getDefiDexVolumes
+      summary: DEX volume rankings
+      description: Returns DEX protocols ranked by 24h trading volume with historical chart data.
+      tags: [DeFi]
+      responses:
+        "200":
+          description: DEX volume data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totalChart:
+                        type: array
+                        description: Historical total DEX volume
+                        items:
+                          type: array
+                          items:
+                            type: number
+                      protocols:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/DexVolume"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/fees:
+    get:
+      operationId: getDefiFees
+      summary: Protocol fee rankings
+      description: Returns top 50 protocols ranked by 24h fees generated.
+      tags: [DeFi]
+      responses:
+        "200":
+          description: Protocol fees list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProtocolFees"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/bridges:
+    get:
+      operationId: getDefiBridges
+      summary: Cross-chain bridge volume data
+      description: Returns bridges sorted by previous-day volume.
+      tags: [DeFi]
+      responses:
+        "200":
+          description: Bridge list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Bridge"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/defi/raises:
+    get:
+      operationId: getDefiRaises
+      summary: Recent funding rounds
+      description: Returns recent crypto/DeFi funding raises sorted by date.
+      tags: [DeFi]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+          description: Max results (max 200)
+      responses:
+        "200":
+          description: Funding rounds list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/FundingRaise"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ──────────────────────────────────────────────────────────────
+  # News
+  # ──────────────────────────────────────────────────────────────
+  /api/news:
+    get:
+      operationId: getNews
+      summary: Latest crypto news
+      description: Returns latest crypto news from aggregated RSS feeds with optional source and category filters.
+      tags: [News]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Max results (max 100)
+        - name: source
+          in: query
+          schema:
+            type: string
+          description: Filter by news source
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+      responses:
+        "200":
+          description: News articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+        "500":
+          description: Failed to fetch news
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/news/search:
+    get:
+      operationId: searchNews
+      summary: Search news
+      description: Full-text search across aggregated news articles.
+      tags: [News]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Max results (max 100)
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+        "400":
+          description: Missing q parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/news/bitcoin:
+    get:
+      operationId: getBitcoinNews
+      summary: Bitcoin news
+      description: Returns news articles filtered to the bitcoin category.
+      tags: [News]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+          description: Max results (max 50)
+      responses:
+        "200":
+          description: Bitcoin news articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+
+  /api/news/defi:
+    get:
+      operationId: getDefiNews
+      summary: DeFi news
+      description: Returns news articles filtered to the DeFi category.
+      tags: [News]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
+          description: Max results (max 50)
+      responses:
+        "200":
+          description: DeFi news articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+
+  /api/news/breaking:
+    get:
+      operationId: getBreakingNews
+      summary: Breaking news
+      description: Returns breaking news from the last 2 hours.
+      tags: [News]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+          description: Max results (max 50)
+      responses:
+        "200":
+          description: Breaking news articles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+
+  /api/news/trending:
+    get:
+      operationId: getTrendingNews
+      summary: Trending stories
+      description: Returns currently trending news topics.
+      tags: [News]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 30
+          description: Max results (max 30)
+      responses:
+        "200":
+          description: Trending topics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsResponse"
+
+  /api/news/sources:
+    get:
+      operationId: getNewsSources
+      summary: Available news sources
+      description: Returns the list of RSS feed sources used for news aggregation.
+      tags: [News]
+      responses:
+        "200":
+          description: Sources list
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Map or list of available news sources
+
+  # ──────────────────────────────────────────────────────────────
+  # On-Chain
+  # ──────────────────────────────────────────────────────────────
+  /api/onchain/gas:
+    get:
+      operationId: getGas
+      summary: Multi-chain gas prices
+      description: Returns current gas/fee estimates across supported chains (Bitcoin currently supported, EVM chains planned).
+      tags: [On-Chain]
+      responses:
+        "200":
+          description: Gas price data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      bitcoin:
+                        $ref: "#/components/schemas/BitcoinGas"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/onchain/bitcoin/fees:
+    get:
+      operationId: getBitcoinFees
+      summary: Bitcoin fee estimates
+      description: Returns recommended Bitcoin transaction fee rates in sat/vB for various confirmation targets.
+      tags: [On-Chain]
+      responses:
+        "200":
+          description: Bitcoin fee estimates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      fastestFee:
+                        type: number
+                      halfHourFee:
+                        type: number
+                      hourFee:
+                        type: number
+                      economyFee:
+                        type: number
+                      minimumFee:
+                        type: number
+                      unit:
+                        type: string
+                        example: sat/vB
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/onchain/bitcoin/stats:
+    get:
+      operationId: getBitcoinStats
+      summary: Bitcoin network stats
+      description: Returns Bitcoin network statistics including hashrate data.
+      tags: [On-Chain]
+      responses:
+        "200":
+          description: Bitcoin network stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    description: Bitcoin hashrate and network statistics
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /api/onchain/token/{address}:
+    get:
+      operationId: getTokenByAddress
+      summary: Token info by contract address
+      description: Returns token information and DEX trading pairs for a given contract address via DexScreener.
+      tags: [On-Chain]
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Token contract address
+      responses:
+        "200":
+          description: Token info with trading pairs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: object
+                        description: Base token info (name, symbol, address)
+                      pairs:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/DexPair"
+                  timestamp:
+                    type: string
+                    format: date-time
+        "404":
+          description: Token not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Token not found
+                  data:
+                    type: "null"
+
+  /api/onchain/prices:
+    get:
+      operationId: getOnchainPrices
+      summary: Multi-chain token prices
+      description: Returns current prices for tokens by chain and address via DeFiLlama.
+      tags: [On-Chain]
+      parameters:
+        - name: coins
+          in: query
+          required: true
+          schema:
+            type: string
+          description: "Comma-separated chain:address pairs (e.g. ethereum:0x...,bsc:0x...)"
+      responses:
+        "200":
+          description: Token price data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties:
+                        price:
+                          type: number
+                        symbol:
+                          type: string
+                        timestamp:
+                          type: number
+                        confidence:
+                          type: number
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Missing coins parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ──────────────────────────────────────────────────────────────
+  # AI Intelligence
+  # ──────────────────────────────────────────────────────────────
+  /api/ai/sentiment/{coin}:
+    get:
+      operationId: getAiSentiment
+      summary: AI sentiment analysis
+      description: >
+        Returns AI-generated sentiment analysis for a specific coin, incorporating
+        live market data, trending coins, and the Fear & Greed Index.
+        Results are cached for 5 minutes.
+      tags: [AI]
+      parameters:
+        - name: coin
+          in: path
+          required: true
+          schema:
+            type: string
+          description: CoinGecko coin ID (e.g. bitcoin, ethereum)
+      responses:
+        "200":
+          description: AI sentiment analysis
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sentiment:
+                        type: string
+                        enum: [bullish, bearish, neutral]
+                      confidence:
+                        type: integer
+                        minimum: 0
+                        maximum: 100
+                      summary:
+                        type: string
+                      keyFactors:
+                        type: array
+                        items:
+                          type: string
+                      outlook:
+                        type: string
+                  cached:
+                    type: boolean
+                  model:
+                    type: string
+                    description: LLM model used
+                  tokensUsed:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+        "404":
+          description: Coin not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Service busy — AI queue full
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: Service busy
+                  retryAfter:
+                    type: integer
+                    example: 5
+
+  /api/ai/digest:
+    get:
+      operationId: getAiDigest
+      summary: AI daily market digest
+      description: >
+        Returns an AI-generated daily crypto market digest incorporating global
+        market stats, top coins, trending coins, and the Fear & Greed Index.
+        Results are cached for 15 minutes.
+      tags: [AI]
+      responses:
+        "200":
+          description: AI market digest
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      headline:
+                        type: string
+                      marketStatus:
+                        type: string
+                        enum: [risk_on, risk_off, neutral]
+                      topMovers:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            change:
+                              type: string
+                            note:
+                              type: string
+                      keyInsights:
+                        type: array
+                        items:
+                          type: string
+                      outlook:
+                        type: string
+                  cached:
+                    type: boolean
+                  model:
+                    type: string
+                  tokensUsed:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+        "503":
+          description: Service busy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
+
+  /api/ai/signals:
+    get:
+      operationId: getAiSignals
+      summary: AI trading signals
+      description: >
+        Returns AI-generated trading signals based on top coin movements, DeFi
+        yields, and market conditions. Results are cached for 10 minutes.
+      tags: [AI]
+      responses:
+        "200":
+          description: AI trading signals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      signals:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum: [momentum, yield, reversal, breakout]
+                            asset:
+                              type: string
+                            action:
+                              type: string
+                              enum: [watch, long_bias, short_bias, farm]
+                            confidence:
+                              type: integer
+                              minimum: 0
+                              maximum: 100
+                            reasoning:
+                              type: string
+                      marketContext:
+                        type: string
+                      riskLevel:
+                        type: string
+                        enum: [low, medium, high]
+                  cached:
+                    type: boolean
+                  model:
+                    type: string
+                  tokensUsed:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+        "503":
+          description: Service busy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
+
+  /api/ai/ask:
+    post:
+      operationId: askAi
+      summary: Ask AI about crypto
+      description: >
+        Submit a free-form question about crypto markets. The AI is enriched with
+        live market data (total cap, BTC dominance, Fear & Greed) before answering.
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question:
+                  type: string
+                  description: The question to ask
+                  example: What is causing Bitcoin to rally today?
+                context:
+                  type: string
+                  description: Optional additional context to include in the prompt
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      answer:
+                        type: string
+                  model:
+                    type: string
+                  tokensUsed:
+                    type: integer
+                  timestamp:
+                    type: string
+                    format: date-time
+        "400":
+          description: Missing question field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "503":
+          description: Service busy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  retryAfter:
+                    type: integer
+
+components:
+  schemas:
+    # ── Common ─────────────────────────────────────────────────
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    # ── Market ─────────────────────────────────────────────────
+    CoinSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          example: bitcoin
+        symbol:
+          type: string
+          example: btc
+        name:
+          type: string
+          example: Bitcoin
+        image:
+          type: string
+          format: uri
+        price:
+          type: number
+        marketCap:
+          type: number
+        rank:
+          type: integer
+          nullable: true
+        volume24h:
+          type: number
+        change24h:
+          type: number
+          nullable: true
+        change7d:
+          type: number
+          nullable: true
+        change30d:
+          type: number
+          nullable: true
+        circulatingSupply:
+          type: number
+        totalSupply:
+          type: number
+          nullable: true
+        maxSupply:
+          type: number
+          nullable: true
+        ath:
+          type: number
+        athChange:
+          type: number
+        sparkline7d:
+          type: array
+          items:
+            type: number
+          description: 7-day sparkline prices (only when sparkline=true)
+
+    CoinDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        symbol:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          description: English description
+        categories:
+          type: array
+          items:
+            type: string
+        platforms:
+          type: object
+          additionalProperties:
+            type: string
+        links:
+          type: object
+          properties:
+            homepage:
+              type: array
+              items:
+                type: string
+                format: uri
+            explorers:
+              type: array
+              items:
+                type: string
+                format: uri
+            github:
+              type: array
+              items:
+                type: string
+                format: uri
+        marketData:
+          type: object
+          properties:
+            price:
+              type: object
+              additionalProperties:
+                type: number
+            marketCap:
+              type: object
+              additionalProperties:
+                type: number
+            volume:
+              type: object
+              additionalProperties:
+                type: number
+            change24h:
+              type: number
+              nullable: true
+            change7d:
+              type: number
+              nullable: true
+            change30d:
+              type: number
+              nullable: true
+            circulatingSupply:
+              type: number
+            totalSupply:
+              type: number
+              nullable: true
+            maxSupply:
+              type: number
+              nullable: true
+
+    TrendingCoin:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        symbol:
+          type: string
+        rank:
+          type: integer
+          nullable: true
+        priceBtc:
+          type: number
+        thumb:
+          type: string
+          format: uri
+        score:
+          type: integer
+
+    GlobalMarket:
+      type: object
+      properties:
+        activeCryptocurrencies:
+          type: integer
+        markets:
+          type: integer
+        totalMarketCap:
+          type: number
+          description: Total market cap in USD
+        totalVolume24h:
+          type: number
+          description: Total 24h volume in USD
+        btcDominance:
+          type: number
+        ethDominance:
+          type: number
+        marketCapChange24h:
+          type: number
+          description: 24h market cap change percentage
+
+    OHLCCandle:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          description: Unix timestamp in milliseconds
+        open:
+          type: number
+        high:
+          type: number
+        low:
+          type: number
+        close:
+          type: number
+
+    Exchange:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        yearEstablished:
+          type: integer
+          nullable: true
+        country:
+          type: string
+          nullable: true
+        volume24hBtc:
+          type: number
+        trustScore:
+          type: integer
+          nullable: true
+        rank:
+          type: integer
+          nullable: true
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        marketCap:
+          type: number
+          nullable: true
+        change24h:
+          type: number
+          nullable: true
+        volume24h:
+          type: number
+          nullable: true
+        topCoins:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Image URLs of top 3 coins
+
+    FearGreed:
+      type: object
+      properties:
+        value:
+          type: integer
+          minimum: 0
+          maximum: 100
+        classification:
+          type: string
+          example: Greed
+        timestamp:
+          type: string
+          format: date-time
+
+    DexPair:
+      type: object
+      properties:
+        chain:
+          type: string
+        dex:
+          type: string
+        pair:
+          type: string
+          description: Pair contract address
+        baseToken:
+          type: object
+          properties:
+            address:
+              type: string
+            name:
+              type: string
+            symbol:
+              type: string
+        quoteToken:
+          type: object
+          properties:
+            address:
+              type: string
+            name:
+              type: string
+            symbol:
+              type: string
+        priceUsd:
+          type: string
+          nullable: true
+        volume24h:
+          type: number
+          nullable: true
+        liquidity:
+          type: number
+          nullable: true
+        fdv:
+          type: number
+          nullable: true
+        txns24h:
+          type: object
+          nullable: true
+          properties:
+            buys:
+              type: integer
+            sells:
+              type: integer
+        createdAt:
+          type: string
+          nullable: true
+
+    # ── DeFi ───────────────────────────────────────────────────
+    DefiProtocol:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        symbol:
+          type: string
+          nullable: true
+        tvl:
+          type: number
+        change1h:
+          type: number
+          nullable: true
+        change1d:
+          type: number
+          nullable: true
+        change7d:
+          type: number
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        chains:
+          type: array
+          items:
+            type: string
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        mcap:
+          type: number
+          nullable: true
+
+    ChainTVL:
+      type: object
+      properties:
+        name:
+          type: string
+        tvl:
+          type: number
+        tokenSymbol:
+          type: string
+          nullable: true
+        chainId:
+          type: integer
+          nullable: true
+        geckoId:
+          type: string
+          nullable: true
+
+    YieldPool:
+      type: object
+      properties:
+        pool:
+          type: string
+          description: Pool identifier
+        project:
+          type: string
+        chain:
+          type: string
+        symbol:
+          type: string
+        tvl:
+          type: number
+        apy:
+          type: number
+        apyBase:
+          type: number
+          nullable: true
+        apyReward:
+          type: number
+          nullable: true
+        stablecoin:
+          type: boolean
+        ilRisk:
+          type: string
+          nullable: true
+          description: Impermanent loss risk level
+
+    Stablecoin:
+      type: object
+      properties:
+        name:
+          type: string
+        symbol:
+          type: string
+        geckoId:
+          type: string
+          nullable: true
+        pegType:
+          type: string
+        circulating:
+          type: number
+          description: Total circulating supply in USD
+        chains:
+          type: array
+          items:
+            type: string
+
+    DexVolume:
+      type: object
+      properties:
+        name:
+          type: string
+        volume24h:
+          type: number
+          nullable: true
+        volume7d:
+          type: number
+          nullable: true
+        volume30d:
+          type: number
+          nullable: true
+        change1d:
+          type: number
+          nullable: true
+
+    ProtocolFees:
+      type: object
+      properties:
+        name:
+          type: string
+        fees24h:
+          type: number
+          nullable: true
+        fees7d:
+          type: number
+          nullable: true
+        fees30d:
+          type: number
+          nullable: true
+        category:
+          type: string
+          nullable: true
+
+    Bridge:
+      type: object
+      properties:
+        name:
+          type: string
+        volumePrevDay:
+          type: number
+          nullable: true
+        chains:
+          type: array
+          items:
+            type: string
+
+    FundingRaise:
+      type: object
+      properties:
+        name:
+          type: string
+        amount:
+          type: number
+          nullable: true
+          description: Amount raised in USD
+        round:
+          type: string
+          nullable: true
+        date:
+          type: string
+          format: date-time
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        leadInvestors:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    # ── News ───────────────────────────────────────────────────
+    NewsResponse:
+      type: object
+      description: News response from the RSS aggregation engine
+
+    # ── On-Chain ───────────────────────────────────────────────
+    BitcoinGas:
+      type: object
+      properties:
+        fastest:
+          type: number
+        halfHour:
+          type: number
+        hour:
+          type: number
+        economy:
+          type: number
+        minimum:
+          type: number
+        unit:
+          type: string
+          example: sat/vB

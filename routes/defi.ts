@@ -256,3 +256,104 @@ defiRoutes.get("/raises", async (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── GET /api/defi/hacks ─────────────────────────────────────
+
+defiRoutes.get("/hacks", async (c) => {
+  const limit = Math.min(Number(c.req.query("limit") || 50), 200);
+  const hacks = await llama.getHacks();
+
+  return c.json({
+    data: (hacks || [])
+      .sort((a, b) => (b.date || 0) - (a.date || 0))
+      .slice(0, limit)
+      .map((h) => ({
+        name: h.name,
+        amount: h.amount,
+        date: h.date ? new Date(h.date * 1000).toISOString() : null,
+        chains: h.chains,
+        classification: h.classification,
+        technique: h.technique,
+        target: h.target,
+        link: h.link,
+      })),
+    totalLost: (hacks || []).reduce((s, h) => s + (h.amount || 0), 0),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── GET /api/defi/treasuries ────────────────────────────────
+
+defiRoutes.get("/treasuries", async (c) => {
+  const limit = Math.min(Number(c.req.query("limit") || 50), 200);
+  const treasuries = await llama.getTreasuries();
+
+  return c.json({
+    data: (treasuries || [])
+      .sort((a, b) => (b.total || 0) - (a.total || 0))
+      .slice(0, limit)
+      .map((t) => ({
+        name: t.name,
+        total: t.total,
+        stablecoins: t.stablecoins,
+        majors: t.majors,
+        ownTokens: t.ownTokens,
+        others: t.others,
+      })),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── GET /api/defi/tvl/history ───────────────────────────────
+
+defiRoutes.get("/tvl/history", async (c) => {
+  const data = await llama.getHistoricalTVL();
+
+  return c.json({
+    data: (data || []).slice(-365).map((d) => ({
+      date: new Date(d.date * 1000).toISOString().split("T")[0],
+      tvl: d.tvl,
+    })),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── GET /api/defi/revenue ───────────────────────────────────
+
+defiRoutes.get("/revenue", async (c) => {
+  const limit = Math.min(Number(c.req.query("limit") || 50), 200);
+  const data = await llama.getRevenue();
+
+  return c.json({
+    data: (data.protocols || [])
+      .sort((a, b) => (b.total24h || 0) - (a.total24h || 0))
+      .slice(0, limit)
+      .map((p) => ({
+        name: p.name,
+        revenue24h: p.total24h,
+        revenue7d: p.total7d,
+        revenue30d: p.total30d,
+        category: p.category,
+      })),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── GET /api/defi/nft-marketplaces ──────────────────────────
+
+defiRoutes.get("/nft-marketplaces", async (c) => {
+  const data = await llama.getNFTCollections();
+
+  return c.json({
+    data: (data || [])
+      .sort((a, b) => (b.totalVolumeUSD || 0) - (a.totalVolumeUSD || 0))
+      .map((mp) => ({
+        name: mp.displayName || mp.name,
+        totalVolume: mp.totalVolumeUSD,
+        dailyVolume: mp.dailyVolumeUSD,
+        floorPrice: mp.floorPriceUSD,
+        owners: mp.owners,
+      })),
+    timestamp: new Date().toISOString(),
+  });
+});

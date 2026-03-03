@@ -161,3 +161,170 @@ export function getBitcoinHashrate(): Promise<{
     fetchJSON("https://mempool.space/api/v1/mining/hashrate/3d")
   );
 }
+
+// ═══════════════════════════════════════════════════════════════
+// COINPAPRIKA — Extended
+// ═══════════════════════════════════════════════════════════════
+
+/** Coin detail by CoinPaprika ID (e.g. "btc-bitcoin") */
+export function getCoinPaprikaDetail(id: string): Promise<{
+  id: string;
+  name: string;
+  symbol: string;
+  rank: number;
+  type: string;
+  description: string;
+  open_source: boolean;
+  started_at: string | null;
+  tags: Array<{ id: string; name: string }>;
+  team: Array<{ id: string; name: string; position: string }>;
+  links: Record<string, string[]>;
+  whitepaper: { link: string; thumbnail: string };
+  is_active: boolean;
+}> {
+  return cache.wrap(`paprika:coin:${id}`, 600, () =>
+    fetchJSON(`https://api.coinpaprika.com/v1/coins/${id}`)
+  );
+}
+
+/** CoinPaprika OHLCV (last 30 days) */
+export function getCoinPaprikaOHLCV(id: string): Promise<Array<{
+  time_open: string;
+  time_close: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  market_cap: number;
+}>> {
+  return cache.wrap(`paprika:ohlcv:${id}`, 300, () =>
+    fetchJSON(`https://api.coinpaprika.com/v1/coins/${id}/ohlcv/latest/`)
+  );
+}
+
+/** CoinPaprika exchanges list */
+export function getCoinPaprikaExchanges(): Promise<Array<{
+  id: string;
+  name: string;
+  active: boolean;
+  quotes: { USD: { reported_volume_24h: number; adjusted_volume_24h: number } };
+  last_updated: string;
+}>> {
+  return cache.wrap("paprika:exchanges", 600, () =>
+    fetchJSON("https://api.coinpaprika.com/v1/exchanges")
+  );
+}
+
+/** CoinPaprika coin events */
+export function getCoinPaprikaEvents(id: string): Promise<Array<{
+  id: string;
+  date: string;
+  name: string;
+  description: string;
+  is_conference: boolean;
+  link: string;
+}>> {
+  return cache.wrap(`paprika:events:${id}`, 600, () =>
+    fetchJSON(`https://api.coinpaprika.com/v1/coins/${id}/events`)
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COINCAP — Extended
+// ═══════════════════════════════════════════════════════════════
+
+/** CoinCap exchange rates (fiat + crypto) */
+export function getCoinCapRates(): Promise<{
+  data: Array<{
+    id: string;
+    symbol: string;
+    currencySymbol: string | null;
+    rateUsd: string;
+    type: string;
+  }>;
+}> {
+  return cache.wrap("coincap:rates", 120, () =>
+    fetchJSON("https://api.coincap.io/v2/rates")
+  );
+}
+
+/** CoinCap markets (exchange data) */
+export function getCoinCapMarkets(limit = 50): Promise<{
+  data: Array<{
+    exchangeId: string;
+    rank: string;
+    baseSymbol: string;
+    baseId: string;
+    quoteSymbol: string;
+    quoteId: string;
+    priceQuote: string;
+    priceUsd: string;
+    volumeUsd24Hr: string;
+    percentExchangeVolume: string;
+  }>;
+}> {
+  return cache.wrap(`coincap:markets:${limit}`, 120, () =>
+    fetchJSON(`https://api.coincap.io/v2/markets?limit=${limit}`)
+  );
+}
+
+/** CoinCap exchanges */
+export function getCoinCapExchanges(): Promise<{
+  data: Array<{
+    exchangeId: string;
+    name: string;
+    rank: string;
+    percentTotalVolume: string;
+    volumeUsd: string;
+    tradingPairs: string;
+    socket: boolean;
+    exchangeUrl: string;
+  }>;
+}> {
+  return cache.wrap("coincap:exchanges", 300, () =>
+    fetchJSON("https://api.coincap.io/v2/exchanges")
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEXSCREENER — Extended
+// ═══════════════════════════════════════════════════════════════
+
+/** DexScreener pairs by chain */
+export function dexPairsByChain(chain: string): Promise<{ pairs: DexPair[] }> {
+  return cache.wrap(`dex:chain:${chain}`, 30, () =>
+    fetchJSON(`https://api.dexscreener.com/latest/dex/pairs/${chain}`)
+  );
+}
+
+/** DexScreener — get specific pair by chain + pairAddress */
+export function dexPairDetail(chain: string, pairAddress: string): Promise<{ pair: DexPair }> {
+  return cache.wrap(`dex:pair:${chain}:${pairAddress}`, 15, () =>
+    fetchJSON(`https://api.dexscreener.com/latest/dex/pairs/${chain}/${pairAddress}`)
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COINGLASS (Free public endpoints)
+// ═══════════════════════════════════════════════════════════════
+
+/** Bitcoin Dominance (from CoinGecko global, already have this — alias) */
+// Use cg.getGlobal() instead.
+
+// ═══════════════════════════════════════════════════════════════
+// BLOCKCHAIN.COM — Simple Price API
+// ═══════════════════════════════════════════════════════════════
+
+/** Multi-currency BTC exchange rates (blockchain.com) */
+export function getBtcExchangeRates(): Promise<Record<string, {
+  "15m": number;
+  last: number;
+  buy: number;
+  sell: number;
+  symbol: string;
+}>> {
+  return cache.wrap("bccom:ticker", 60, () =>
+    fetchJSON("https://blockchain.info/ticker")
+  );
+}
