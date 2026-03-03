@@ -238,8 +238,4 @@ The API enforces a default rate limit of **200 requests per minute per IP** on a
 This project was ported from and informed by the following repositories. They are **reference material used during development, no longer vendored**:
 
 - <https://github.com/agentix-labs/agenti>
-- <https://github.com/nicholasgriffintn/free-crypto-news>
-
-## License
-
-MIT
+- <https://github.com/nirholas/free-crypto-news>
