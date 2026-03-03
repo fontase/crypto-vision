@@ -4,8 +4,8 @@
  * Mocks the auth module so no real key store is used.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Hono } from "hono";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Mock auth module BEFORE importing routes ────────────────
 

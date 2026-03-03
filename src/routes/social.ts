@@ -29,9 +29,9 @@
  */
 
 import { Hono } from "hono";
-import * as social from "../sources/social.js";
-import * as cryptocompare from "../sources/cryptocompare.js";
 import { ApiError } from "../lib/api-error.js";
+import * as cryptocompare from "../sources/cryptocompare.js";
+import * as social from "../sources/social.js";
 
 export const socialRoutes = new Hono();
 

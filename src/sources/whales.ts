@@ -11,9 +11,9 @@
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
-import { cache } from "../lib/cache.js";
 import { ingestWhaleMovements } from "../lib/bq-ingest.js";
+import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 // ─── Blockchair ──────────────────────────────────────────────
 
@@ -443,8 +443,8 @@ export async function getRecentWhaleTransactions(opts: {
     const ethTxPromises = TOP_ETH_ADDRESSES.slice(0, 4).map((addr) =>
       etherscanKey()
         ? fetchJSON<EtherscanResponse>(
-            `${ETHERSCAN}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=25&sort=desc&apikey=${etherscanKey()}`,
-          ).catch(() => ({ status: "0", result: [] }))
+          `${ETHERSCAN}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=25&sort=desc&apikey=${etherscanKey()}`,
+        ).catch(() => ({ status: "0", result: [] }))
         : Promise.resolve({ status: "0", result: [] as EtherscanTx[] }),
     );
 

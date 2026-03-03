@@ -7,8 +7,8 @@
  * is loaded (vi.stubEnv runs before vi.mock factory execution).
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Hono } from "hono";
+import { describe, expect, it, vi } from "vitest";
 
 // Set admin env var BEFORE any mocks/imports (vi.hoisted runs first)
 const TEST_ADMIN_KEY = vi.hoisted(() => {
@@ -39,14 +39,14 @@ vi.mock("@/lib/logger.js", () => ({
 }));
 
 import {
-  apiKeyAuth,
-  requireAdmin,
-  lookupKey,
   addKey,
-  isAdmin,
-  trackUsage,
+  apiKeyAuth,
   getUsage,
+  isAdmin,
+  lookupKey,
+  requireAdmin,
   TIER_LIMITS,
+  trackUsage,
   type ApiTier,
   type KeyEntry,
 } from "@/lib/auth.js";

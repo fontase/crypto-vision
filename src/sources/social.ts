@@ -12,8 +12,8 @@
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
 
-import { fetchJSON } from "../lib/fetcher.js";
 import { cache } from "../lib/cache.js";
+import { fetchJSON } from "../lib/fetcher.js";
 
 // ─── CoinGecko Community Data ────────────────────────────────
 
@@ -332,11 +332,11 @@ export async function getAggregatedSocialStats(
             : null,
           reddit: data.Data.Reddit
             ? {
-                subscribers: data.Data.Reddit.subscribers,
-                activeUsers: data.Data.Reddit.active_users,
-                postsPerDay: data.Data.Reddit.posts_per_day,
-                commentsPerDay: data.Data.Reddit.comments_per_day,
-              }
+              subscribers: data.Data.Reddit.subscribers,
+              activeUsers: data.Data.Reddit.active_users,
+              postsPerDay: data.Data.Reddit.posts_per_day,
+              commentsPerDay: data.Data.Reddit.comments_per_day,
+            }
             : null,
           codeRepository: data.Data.CodeRepository?.List?.map((r) => ({
             stars: r.stars,
@@ -566,13 +566,15 @@ export async function getSocialInfluencers(
 ): Promise<SocialInfluencer[]> {
   return cache.wrap(`social:influencers:${symbol}:${limit}`, 300, async () => {
     const feedData = await getLunarFeed(symbol.toUpperCase(), 50).catch(() => null);
-    const feed = feedData as { data?: Array<{
-      creator_display_name?: string;
-      social_type?: string;
-      interactions_24h?: number;
-      sentiment?: number;
-      creator_followers?: number;
-    }> } | null;
+    const feed = feedData as {
+      data?: Array<{
+        creator_display_name?: string;
+        social_type?: string;
+        interactions_24h?: number;
+        sentiment?: number;
+        creator_followers?: number;
+      }>
+    } | null;
 
     if (!feed?.data) return [];
 
