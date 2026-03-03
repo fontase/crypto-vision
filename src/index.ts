@@ -11,6 +11,7 @@ import { compress } from "hono/compress";
 import { secureHeaders } from "hono/secure-headers";
 import { timing } from "hono/timing";
 import { requestId } from "hono/request-id";
+import { bodyLimit } from "hono/body-limit";
 import { serve } from "@hono/node-server";
 import { createNodeWebSocket } from "@hono/node-ws";
 
@@ -62,6 +63,9 @@ app.use("*", timing());
 app.use("*", secureHeaders());
 app.use("*", compress());
 
+// Body size limit — prevent OOM from large POST payloads (default 256KB)
+app.use("/api/*", bodyLimit({ maxSize: 256 * 1024, type: "application/json" }));
+
 app.use(
   "*",
   cors({
@@ -84,6 +88,9 @@ app.use("/api/*", apiKeyAuth());
 // Rate limit — dynamically uses tier from auth middleware
 app.use("/api/*", rateLimit({ limit: 200, windowSeconds: 60 }));
 
+// CDN Cache-Control headers — enables edge caching for read-heavy endpoints
+app.use("/api/*", cdnCacheHeaders);
+
 // Structured request logging (method, path, status, duration)
 app.use("*", requestLogger);
 
@@ -102,23 +109,31 @@ app.get("/", (c) =>
 
 app.get("/health", async (c) => {
   const cacheStats = cache.stats();
-  return c.json({
-    status: "ok",
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString(),
-    cache: cacheStats,
-    circuitBreakers: circuitBreakerStats(),
-    queues: {
-      ai: aiQueue.stats(),
-      heavyFetch: heavyFetchQueue.stats(),
+  const cbs = circuitBreakerStats();
+  const openCircuits = Object.values(cbs).filter((b) => b.state === "open").length;
+  const degraded = !cacheStats.redisConnected && !!process.env.REDIS_URL;
+  const healthy = !degraded && openCircuits === 0;
+
+  return c.json(
+    {
+      status: healthy ? "ok" : "degraded",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      cache: cacheStats,
+      circuitBreakers: cbs,
+      queues: {
+        ai: aiQueue.stats(),
+        heavyFetch: heavyFetchQueue.stats(),
+      },
+      websockets: wsStats(),
+      memory: {
+        rss: Math.round(process.memoryUsage.rss() / 1024 / 1024),
+        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      },
+      env: process.env.NODE_ENV || "development",
     },
-    websockets: wsStats(),
-    memory: {
-      rss: Math.round(process.memoryUsage.rss() / 1024 / 1024),
-      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-    },
-    env: process.env.NODE_ENV || "development",
-  });
+    healthy ? 200 : 503,
+  );
 });
 
 // ─── Readiness Probe ─────────────────────────────────────────
@@ -422,6 +437,50 @@ app.get("/api", (c) =>
         "POST /api/keys": "Generate new API key (admin)",
         "GET /api/keys/usage": "Usage stats for current key",
       },
+      calendar: {
+        "GET /api/calendar/events": "Upcoming hot crypto events (CoinMarketCal)",
+        "GET /api/calendar/coin/:coinId": "Events for a specific coin",
+        "GET /api/calendar/categories": "Event categories",
+        "GET /api/calendar/category/:id": "Events by category",
+        "GET /api/calendar/coins": "Coins with upcoming events",
+      },
+      oracles: {
+        "GET /api/oracles/chainlink/feeds": "Chainlink mainnet price feeds",
+        "GET /api/oracles/chainlink/all": "All Chainlink feed directories",
+        "GET /api/oracles/dia/quote/:symbol": "DIA oracle price quote",
+        "GET /api/oracles/dia/assets": "DIA asset list",
+        "GET /api/oracles/dia/supply/:symbol": "DIA circulating supply",
+        "GET /api/oracles/pyth/feeds": "Pyth Network feed IDs",
+        "POST /api/oracles/pyth/prices": "Pyth latest prices (POST ids[])",
+      },
+      whales: {
+        "GET /api/whales/btc/latest": "Recent large BTC transactions (>1 BTC)",
+        "GET /api/whales/stats/bitcoin": "Blockchair BTC network stats",
+        "GET /api/whales/stats/ethereum": "Blockchair ETH network stats",
+        "GET /api/whales/stats/:chain": "Blockchair stats for any chain",
+        "GET /api/whales/charts/price": "BTC market price chart (?timespan=1year)",
+        "GET /api/whales/charts/hashrate": "BTC hashrate chart",
+        "GET /api/whales/charts/difficulty": "BTC difficulty chart",
+        "GET /api/whales/charts/transactions": "BTC transaction count chart",
+        "GET /api/whales/charts/:name": "Any blockchain.info chart",
+      },
+      nft: {
+        "GET /api/nft/top": "Top NFT collections by volume (Reservoir)",
+        "GET /api/nft/collection/:id": "NFT collection stats",
+        "GET /api/nft/activity/:id": "NFT collection activity feed",
+        "GET /api/nft/overview": "NFT market overview (DeFi Llama)",
+        "GET /api/nft/chains/:chain": "NFT collections by chain",
+        "GET /api/nft/chart/:slug": "NFT collection floor/volume chart",
+        "GET /api/nft/marketplaces": "NFT marketplace volume rankings",
+      },
+      staking: {
+        "GET /api/staking/eth/validators": "ETH validator queue (beaconcha.in)",
+        "GET /api/staking/eth/epoch": "Latest ETH epoch info",
+        "GET /api/staking/eth/network": "ETH 2.0 network stats",
+        "GET /api/staking/eth/rated": "Rated.network validator overview",
+        "GET /api/staking/eth/operators": "Top staking operators (?window=30d)",
+        "GET /api/staking/liquid": "Liquid staking protocols (DeFi Llama)",
+      },
       websocket: {
         "WS /ws/prices": "Real-time price ticks (subscribe by coin IDs via ?coins=bitcoin,ethereum)",
         "WS /ws/bitcoin": "New blocks and large Bitcoin transactions",
@@ -499,12 +558,7 @@ const SHUTDOWN_TIMEOUT_MS = Number(process.env.SHUTDOWN_TIMEOUT_MS) || 15_000;
 async function gracefulShutdown(signal: string) {
   log.info(`${signal} received — starting graceful shutdown`);
 
-  // Stop accepting new connections
-  server.close(() => {
-    log.info("HTTP server closed");
-  });
-
-  // Allow in-flight requests to drain
+  // Allow in-flight requests to drain, then close
   await new Promise<void>((resolve) => {
     const timer = setTimeout(() => {
       log.warn("Shutdown timeout reached, forcing exit");
@@ -514,6 +568,7 @@ async function gracefulShutdown(signal: string) {
 
     server.close(() => {
       clearTimeout(timer);
+      log.info("HTTP server closed");
       resolve();
     });
   });

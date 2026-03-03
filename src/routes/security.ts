@@ -181,3 +181,12 @@ securityRoutes.get("/chains", async (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── GET /api/security/approval/:chainId/:address ────────────
+
+securityRoutes.get("/approval/:chainId/:address", async (c) => {
+  const chainId = resolveChainId(c.req.param("chainId"));
+  const address = c.req.param("address");
+  const data = await goplus.getApprovalSecurity(chainId, address);
+  return c.json({ chainId, address, data, timestamp: new Date().toISOString() });
+});

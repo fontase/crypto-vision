@@ -2,7 +2,7 @@
  * Crypto Vision — Cache Layer
  *
  * Two-tier caching designed for 10M+ users:
- *  1. In-memory LRU (instant, per-instance, up to 50k entries)
+ *  1. In-memory LRU (instant, per-instance, up to 200k entries)
  *  2. Redis (shared across instances, GCP Memorystore in prod)
  *
  * Scalability features:
@@ -11,6 +11,8 @@
  *  - Graceful degradation: memory-only if Redis is down
  *  - Batch eviction for efficiency under high load
  *  - Uses shared Redis connection from lib/redis.ts (prevents connection exhaustion)
+ *  - Hit/miss counters for observability
+ *  - Configurable via environment variables
  *
  * Every upstream call goes through cache.wrap() so we never
  * hammer free-tier APIs and stay well within rate limits.
@@ -18,6 +20,11 @@
 
 import { logger } from "./logger.js";
 import { getRedis, isRedisConnected, disconnectRedis } from "./redis.js";
+
+// ─── Configuration ───────────────────────────────────────────
+
+const MEMORY_MAX_SIZE = Number(process.env.CACHE_MAX_ENTRIES || 200_000);
+const STALE_RATIO = 0.8; // serve stale at 80% TTL
 
 // ─── In-Memory LRU ──────────────────────────────────────────
 
@@ -32,39 +39,61 @@ class MemoryCache {
   private store = new Map<string, CacheEntry<unknown>>();
   private maxSize: number;
 
-  constructor(maxSize = 50_000) {
+  // Observability counters
+  hits = 0;
+  misses = 0;
+  staleHits = 0;
+  evictions = 0;
+
+  constructor(maxSize: number) {
     this.maxSize = maxSize;
   }
 
   get<T>(key: string): { value: T; stale: boolean } | null {
     const entry = this.store.get(key) as CacheEntry<T> | undefined;
-    if (!entry) return null;
+    if (!entry) { this.misses++; return null; }
     const now = Date.now();
-    if (now > entry.expiresAt) { this.store.delete(key); return null; }
-    return { value: entry.value, stale: now > entry.staleAt };
+    if (now > entry.expiresAt) {
+      this.store.delete(key);
+      this.misses++;
+      return null;
+    }
+    // Move to end of Map for LRU ordering (Map iteration is insertion order)
+    this.store.delete(key);
+    this.store.set(key, entry);
+    const stale = now > entry.staleAt;
+    if (stale) { this.staleHits++; } else { this.hits++; }
+    return { value: entry.value, stale };
   }
 
   set<T>(key: string, value: T, ttlSeconds: number): void {
+    // Evict if at capacity
     if (this.store.size >= this.maxSize) {
-      // Batch-evict 10% for amortized efficiency
       const evictCount = Math.ceil(this.maxSize * 0.1);
       const iter = this.store.keys();
       for (let i = 0; i < evictCount; i++) {
         const k = iter.next().value;
         if (k) this.store.delete(k);
       }
+      this.evictions += evictCount;
     }
     const now = Date.now();
     this.store.set(key, {
       value,
-      staleAt: now + ttlSeconds * 800,   // stale at 80% TTL
-      expiresAt: now + ttlSeconds * 1000, // hard expire at 100%
+      staleAt: now + ttlSeconds * 1000 * STALE_RATIO,
+      expiresAt: now + ttlSeconds * 1000,
     });
   }
 
   delete(key: string): void { this.store.delete(key); }
   clear(): void { this.store.clear(); }
   get size(): number { return this.store.size; }
+
+  /** Hit rate percentage */
+  get hitRate(): number {
+    const total = this.hits + this.staleHits + this.misses;
+    return total === 0 ? 0 : Math.round(((this.hits + this.staleHits) / total) * 10000) / 100;
+  }
 }
 
 // ─── Single-Flight (Cache Stampede Protection) ───────────────
@@ -73,7 +102,7 @@ const inflight = new Map<string, Promise<unknown>>();
 
 // ─── Unified Cache Interface ─────────────────────────────────
 
-const mem = new MemoryCache();
+const mem = new MemoryCache(MEMORY_MAX_SIZE);
 
 export const cache = {
   /**
@@ -89,7 +118,9 @@ export const cache = {
         const raw = await r.get(`cv:${key}`);
         if (raw) {
           const parsed = JSON.parse(raw) as T;
-          mem.set(key, parsed, 30);
+          // Backfill memory with remaining TTL from Redis
+          const ttl = await r.ttl(`cv:${key}`).catch(() => 30);
+          mem.set(key, parsed, Math.max(ttl, 10));
           return parsed;
         }
       } catch {
@@ -176,11 +207,16 @@ export const cache = {
     if (r) { try { await r.del(`cv:${key}`); } catch { /* noop */ } }
   },
 
-  /** Stats for /health. */
+  /** Stats for /health — includes hit rate metrics for observability. */
   stats() {
     return {
       memoryEntries: mem.size,
-      memoryMaxSize: 50_000,
+      memoryMaxSize: MEMORY_MAX_SIZE,
+      memoryHitRate: mem.hitRate,
+      memoryHits: mem.hits,
+      memoryMisses: mem.misses,
+      memoryStaleHits: mem.staleHits,
+      memoryEvictions: mem.evictions,
       redisConnected: isRedisConnected(),
       inflightRequests: inflight.size,
     };

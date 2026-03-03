@@ -19,6 +19,7 @@ import { ApiError } from "../lib/api-error.js";
 import * as alt from "../sources/alternative.js";
 import * as llama from "../sources/defillama.js";
 import * as bc from "../sources/blockchain.js";
+import * as evm from "../sources/evm.js";
 
 export const onchainRoutes = new Hono();
 
@@ -391,3 +392,24 @@ onchainRoutes.get("/bitcoin/network", async (c) => {
   });
 });
 
+// ─── GET /api/onchain/eth/supply ─────────────────────────
+
+onchainRoutes.get("/eth/supply", async (c) => {
+  const data = await evm.getEthSupply();
+  return c.json({ data, timestamp: new Date().toISOString() });
+});
+
+// ─── GET /api/onchain/eth/price ──────────────────────────
+
+onchainRoutes.get("/eth/price", async (c) => {
+  const data = await evm.getEthPrice();
+  return c.json({ data, timestamp: new Date().toISOString() });
+});
+
+// ─── GET /api/onchain/erc20/holders/:address ────────────
+
+onchainRoutes.get("/erc20/holders/:address", async (c) => {
+  const address = c.req.param("address");
+  const data = await evm.getERC20TopHolders(address);
+  return c.json({ address, data, timestamp: new Date().toISOString() });
+});

@@ -23,12 +23,12 @@ import * as deribit from "../sources/deribit.js";
 export const exchangesRoutes = new Hono();
 
 exchangesRoutes.get("/list", async (c) => {
-  const data = await coincap.getExchanges();
+  const { data } = await coincap.getExchanges();
   return c.json({ count: data.length, data });
 });
 
 exchangesRoutes.get("/rates", async (c) => {
-  const data = await coincap.getRates();
+  const { data } = await coincap.getRates();
   return c.json({ count: data.length, data });
 });
 
@@ -67,7 +67,7 @@ exchangesRoutes.get("/coincap/candles", async (c) => {
 
 exchangesRoutes.get("/:id/markets", async (c) => {
   const id = c.req.param("id");
-  const data = await coincap.getExchangeMarkets(id);
+  const { data } = await coincap.getMarkets(id);
   return c.json({ exchange: id, count: data.length, data });
 });
 

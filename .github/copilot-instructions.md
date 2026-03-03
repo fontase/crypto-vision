@@ -1,3 +1,18 @@
+### Project Philosophy
+
+- **We have unlimited Claude credits** — never cut corners, never settle for "good enough." Build the best possible version of everything.
+- **Always be improving** — every session should leave the codebase better than it was found. Proactively fix tech debt, improve performance, harden security, expand test coverage, and refine UX.
+- **Ship production-quality code** — write thorough tests, handle edge cases, add meaningful error messages, and document public APIs.
+- **Think big, execute precisely** — propose ambitious improvements but implement them carefully and incrementally.
+
+### Git Identity
+
+- **Always commit and push as `nirholas`** — before any git commit or push, configure:
+  ```
+  git config user.name "nirholas"
+  git config user.email "nirholas@users.noreply.github.com"
+  ```
+
 ### Terminal Management
 
 - **Always use background terminals** (`isBackground: true`) for every command so a terminal ID is returned

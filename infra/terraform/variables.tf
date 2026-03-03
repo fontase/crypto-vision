@@ -28,7 +28,7 @@ variable "domain" {
 variable "redis_tier" {
   description = "Memorystore Redis tier (BASIC or STANDARD_HA)"
   type        = string
-  default     = "BASIC"
+  default     = "STANDARD_HA"
   validation {
     condition     = contains(["BASIC", "STANDARD_HA"], var.redis_tier)
     error_message = "Redis tier must be BASIC or STANDARD_HA."
@@ -38,31 +38,31 @@ variable "redis_tier" {
 variable "redis_memory_size_gb" {
   description = "Redis memory size in GB"
   type        = number
-  default     = 1
+  default     = 5
 }
 
 variable "cloud_run_memory" {
   description = "Memory per Cloud Run instance"
   type        = string
-  default     = "1Gi"
+  default     = "2Gi"
 }
 
 variable "cloud_run_cpu" {
   description = "vCPUs per Cloud Run instance"
   type        = string
-  default     = "2"
+  default     = "4"
 }
 
 variable "cloud_run_min_instances" {
-  description = "Minimum Cloud Run instances"
+  description = "Minimum Cloud Run instances (always warm)"
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "cloud_run_max_instances" {
-  description = "Maximum Cloud Run instances"
+  description = "Maximum Cloud Run instances (scales to 10M+ users)"
   type        = number
-  default     = 20
+  default     = 500
 }
 
 variable "container_image" {

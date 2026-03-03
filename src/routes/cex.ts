@@ -255,3 +255,46 @@ cexRoutes.get("/book-ticker", async (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── GET /api/cex/mini-ticker ────────────────────────────────
+// Lightweight 24h ticker (faster response than full ticker)
+
+cexRoutes.get("/mini-ticker", async (c) => {
+  const all = await binance.getMiniTicker() as any[];
+  const quote = c.req.query("quote")?.toUpperCase();
+  let filtered = quote ? all.filter((t: any) => t.symbol.endsWith(quote)) : all;
+  filtered = filtered.slice(0, 200);
+
+  return c.json({
+    data: filtered.map((t: any) => ({
+      symbol: t.symbol,
+      lastPrice: Number(t.lastPrice),
+      openPrice: Number(t.openPrice),
+      highPrice: Number(t.highPrice),
+      lowPrice: Number(t.lowPrice),
+      volume: Number(t.volume),
+      quoteVolume: Number(t.quoteVolume),
+    })),
+    count: filtered.length,
+    source: "binance",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ─── GET /api/cex/avg-price/:symbol ─────────────────────────
+// 5-minute weighted average price
+
+cexRoutes.get("/avg-price/:symbol", async (c) => {
+  const symbol = c.req.param("symbol").toUpperCase();
+  const data = await binance.getAvgPrice(symbol);
+
+  return c.json({
+    data: {
+      symbol,
+      price: Number(data.price),
+      windowMinutes: data.mins,
+    },
+    source: "binance",
+    timestamp: new Date().toISOString(),
+  });
+});

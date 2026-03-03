@@ -68,9 +68,12 @@ const PROVIDERS: AIProvider[] = [
     url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
     model: "gemini-2.0-flash",
     buildRequest: (key, system, user, maxTokens, temperature) => ({
-      url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
       init: {
         method: "POST",
+        headers: {
+          "x-goog-api-key": key,
+        },
         body: {
           contents: [{ parts: [{ text: `${system}\n\n${user}` }] }],
           generationConfig: {

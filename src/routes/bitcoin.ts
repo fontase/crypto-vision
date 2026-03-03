@@ -199,3 +199,28 @@ bitcoinRoutes.get("/block-height", async (c) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── GET /api/bitcoin/block/:hash ────────────────────────────
+// Block details by hash (mempool.space)
+
+bitcoinRoutes.get("/block/:hash", async (c) => {
+  const hash = c.req.param("hash");
+  const block = await btc.getBlock(hash);
+
+  return c.json({
+    data: {
+      id: block.id,
+      height: block.height,
+      version: block.version,
+      timestamp: block.timestamp,
+      txCount: block.tx_count,
+      size: block.size,
+      weight: block.weight,
+      difficulty: block.difficulty,
+      nonce: block.nonce,
+      previousBlockHash: block.previousblockhash,
+    },
+    source: "mempool.space",
+    timestamp: new Date().toISOString(),
+  });
+});

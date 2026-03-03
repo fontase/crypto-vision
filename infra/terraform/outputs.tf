@@ -41,3 +41,18 @@ output "scheduler_service_account" {
   description = "Scheduler invoker service account email"
   value       = google_service_account.scheduler.email
 }
+
+output "lb_ip_address" {
+  description = "Global Load Balancer IP (point DNS A record here)"
+  value       = var.enable_cdn ? google_compute_global_address.lb_ip[0].address : null
+}
+
+output "cdn_enabled" {
+  description = "Whether Cloud CDN is active"
+  value       = var.enable_cdn
+}
+
+output "cloud_armor_enabled" {
+  description = "Whether Cloud Armor WAF is active"
+  value       = var.enable_cloud_armor
+}

@@ -16,10 +16,10 @@
 substitutions:
   _SERVICE_NAME: crypto-vision
   _REGION: us-central1
-  _MEMORY: 1Gi
-  _CPU: "2"
-  _MIN_INSTANCES: "1"
-  _MAX_INSTANCES: "20"
+  _MEMORY: 2Gi
+  _CPU: "4"
+  _MIN_INSTANCES: "2"
+  _MAX_INSTANCES: "500"
   _VPC_CONNECTOR: crypto-vision-vpc
   _SERVICE_ACCOUNT: crypto-vision-run
 
@@ -57,19 +57,19 @@ steps:
     args:
       - build
       - -t
-      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}:$SHORT_SHA
       - -t
-      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}:latest
       - .
     waitFor: ["typecheck", "lint", "test"]
 
-  # ── 6. Push to Container Registry ─────────────────────────
+  # ── 6. Push to Artifact Registry ───────────────────────────
   - name: gcr.io/cloud-builders/docker
     id: push
     args:
       - push
       - --all-tags
-      - gcr.io/$PROJECT_ID/${_SERVICE_NAME}
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}
     waitFor: ["build"]
 
   # ── 7. Deploy to Cloud Run ────────────────────────────────
@@ -80,7 +80,7 @@ steps:
       - run
       - deploy
       - ${_SERVICE_NAME}
-      - --image=gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA
+      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}:$SHORT_SHA
       - --region=${_REGION}
       - --platform=managed
       - --no-allow-unauthenticated
@@ -90,7 +90,9 @@ steps:
       - --min-instances=${_MIN_INSTANCES}
       - --max-instances=${_MAX_INSTANCES}
       - --timeout=60s
-      - --concurrency=200
+      - --concurrency=250
+      - --cpu-boost
+      - --execution-environment=gen2
       - --vpc-connector=projects/$PROJECT_ID/locations/${_REGION}/connectors/${_VPC_CONNECTOR}
       - --vpc-egress=private-ranges-only
       - --service-account=${_SERVICE_ACCOUNT}@$PROJECT_ID.iam.gserviceaccount.com
@@ -99,8 +101,8 @@ steps:
     waitFor: ["push"]
 
 images:
-  - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:$SHORT_SHA
-  - gcr.io/$PROJECT_ID/${_SERVICE_NAME}:latest
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}:$SHORT_SHA
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/crypto-vision/${_SERVICE_NAME}:latest
 
 options:
   logging: CLOUD_LOGGING_ONLY

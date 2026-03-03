@@ -1,8 +1,53 @@
 import jsxA11y from "eslint-plugin-jsx-a11y";
 import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
+import tailwindcss from "eslint-plugin-tailwindcss";
 
 const eslintConfig = [
+  // ─── Tailwind CSS class validation ───────────────────────────
+  // Catches non-existent, duplicate, and contradicting classes at lint time.
+  // Inspired by Pump.fun's approach: they added eslint rules to flag
+  // classes that "flat out didn't exist" and web-only classes that don't
+  // apply in React Native. For our Next.js dashboard this catches typos
+  // and ensures consistent Tailwind usage.
+  ...tailwindcss.configs["flat/recommended"],
+  {
+    files: ["**/*.{ts,tsx}"],
+    plugins: {
+      tailwindcss,
+    },
+    rules: {
+      // Flag class names that don't exist in the Tailwind config
+      "tailwindcss/no-custom-classname": ["warn", {
+        // Allow our design-token classes (CSS variable based)
+        whitelist: [
+          "bg-background.*",
+          "bg-surface.*",
+          "text-primary.*",
+          "text-secondary.*",
+          "border-surface.*",
+          "bg-brand.*",
+          "text-brand.*",
+          "text-bullish",
+          "text-bearish",
+          "bg-bullish.*",
+          "bg-bearish.*",
+        ],
+      }],
+      // Warn on contradicting classes (e.g., p-2 and p-4 on same element)
+      "tailwindcss/no-contradicting-classname": "warn",
+      // Enforce consistent class ordering for readability
+      "tailwindcss/classnames-order": "warn",
+      // No unnecessary arbitrary values when a utility exists
+      "tailwindcss/no-unnecessary-arbitrary-value": "warn",
+    },
+    settings: {
+      tailwindcss: {
+        config: "tailwind.config.js",
+        callees: ["cn", "clsx", "cva", "twMerge"],
+      },
+    },
+  },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {

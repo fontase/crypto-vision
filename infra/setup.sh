@@ -27,8 +27,8 @@ PROJECT="${GCP_PROJECT:?Set GCP_PROJECT env var}"
 REGION="${GCP_REGION:-us-central1}"
 SERVICE_NAME="${SERVICE_NAME:-crypto-vision}"
 REDIS_INSTANCE="${REDIS_INSTANCE:-crypto-vision-cache}"
-REDIS_TIER="${REDIS_TIER:-BASIC}"          # BASIC (dev) or STANDARD_HA (prod)
-REDIS_SIZE_GB="${REDIS_SIZE_GB:-1}"
+REDIS_TIER="${REDIS_TIER:-STANDARD_HA}"          # STANDARD_HA for production failover
+REDIS_SIZE_GB="${REDIS_SIZE_GB:-5}"
 REDIS_VERSION="${REDIS_VERSION:-REDIS_7_0}"
 VPC_CONNECTOR="${VPC_CONNECTOR:-crypto-vision-vpc}"
 DOMAIN="${DOMAIN:-cryptocurrency.cv}"
@@ -205,12 +205,14 @@ gcloud run deploy "${SERVICE_NAME}" \
   --platform=managed \
   --no-allow-unauthenticated \
   --port=8080 \
-  --memory=1Gi \
-  --cpu=2 \
-  --min-instances=1 \
-  --max-instances=20 \
+  --memory=2Gi \
+  --cpu=4 \
+  --min-instances=2 \
+  --max-instances=500 \
   --timeout=60s \
-  --concurrency=200 \
+  --concurrency=250 \
+  --cpu-boost \
+  --execution-environment=gen2 \
   --vpc-connector="${VPC_CONNECTOR}" \
   --vpc-egress=private-ranges-only \
   --service-account="${CLOUD_RUN_SA}@${PROJECT}.iam.gserviceaccount.com" \

@@ -35,12 +35,12 @@ macroRoutes.get("/commodities", async (c) => {
 });
 
 macroRoutes.get("/bonds", async (c) => {
-  const data = await macro.getTreasuryYields();
+  const data = await macro.getBondYields();
   return c.json({ data, timestamp: new Date().toISOString() });
 });
 
 macroRoutes.get("/vix", async (c) => {
-  const data = await macro.getVIX();
+  const data = await macro.getVolatility();
   return c.json(data);
 });
 

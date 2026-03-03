@@ -329,3 +329,24 @@ perpsRoutes.get("/hl/user/:address", async (c) => {
   ]);
   return c.json({ state, orders });
 });
+
+// ─── Hyperliquid All Mid Prices ─────────────────────────────
+
+perpsRoutes.get("/hl/mids", async (c) => {
+  const data = await hl.getAllMids();
+  return c.json({ data, timestamp: new Date().toISOString() });
+});
+
+// ─── Hyperliquid L1 Stats ───────────────────────────────────
+
+perpsRoutes.get("/hl/stats", async (c) => {
+  const data = await hl.getL1Stats();
+  return c.json({ data, timestamp: new Date().toISOString() });
+});
+
+// ─── Deribit Currencies ─────────────────────────────────────
+
+perpsRoutes.get("/deribit/currencies", async (c) => {
+  const data = await deribit.getCurrencies();
+  return c.json({ data, timestamp: new Date().toISOString() });
+});

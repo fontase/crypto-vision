@@ -98,7 +98,7 @@ resource "google_cloud_run_v2_service" "app" {
     }
 
     timeout                          = "60s"
-    max_instance_request_concurrency = 200
+    max_instance_request_concurrency = 250
   }
 
   traffic {

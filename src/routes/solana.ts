@@ -62,3 +62,33 @@ solanaRoutes.get("/search", async (c) => {
   const data = await jupiter.searchTokens(q);
   return c.json({ query: q, data });
 });
+
+// ─── Price vs Another Token ──────────────────────────────────
+
+solanaRoutes.get("/price-vs/:token", async (c) => {
+  const token = c.req.param("token");
+  const vs = c.req.query("vs") || "So11111111111111111111111111111111111111112";
+  const data = await jupiter.getPriceVs(token, vs);
+  return c.json(data);
+});
+
+// ─── Strict Token List ───────────────────────────────────────
+
+solanaRoutes.get("/tokens/strict", async (c) => {
+  const data = await jupiter.getStrictTokenList();
+  return c.json({ count: data.length, data });
+});
+
+// ─── Popular Token Prices ────────────────────────────────────
+
+solanaRoutes.get("/popular/prices", async (c) => {
+  const data = await jupiter.getPopularPrices();
+  return c.json(data);
+});
+
+// ─── Top Tokens by Market Cap ────────────────────────────────
+
+solanaRoutes.get("/top-tokens", async (c) => {
+  const data = await jupiter.getTopTokensByMarketCap();
+  return c.json(data);
+});

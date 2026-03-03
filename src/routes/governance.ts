@@ -56,3 +56,11 @@ governanceRoutes.get("/search", async (c) => {
   const data = await snapshot.searchSpaces(q);
   return c.json({ query: q, count: data.length, data });
 });
+
+// ─── GET /api/governance/top-spaces ──────────────────────────
+
+governanceRoutes.get("/top-spaces", async (c) => {
+  const first = Number(c.req.query("limit") || "20");
+  const data = await snapshot.getTopSpaces(first);
+  return c.json({ count: data.length, data });
+});

@@ -34,3 +34,11 @@ depinRoutes.get("/metrics", async (c) => {
   const data = await depin.getMetrics();
   return c.json(data);
 });
+
+// ─── GET /api/depin/category/:category ───────────────────────
+
+depinRoutes.get("/category/:category", async (c) => {
+  const category = c.req.param("category");
+  const data = await depin.getProjectsByCategory(category);
+  return c.json({ category, count: Array.isArray(data) ? data.length : 0, data });
+});
