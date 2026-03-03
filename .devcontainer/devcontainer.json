@@ -3,8 +3,7 @@
     "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
     "hostRequirements": {
         "cpus": 32,
-        "memory": "128gb",
-        "storage": "128gb"
+        "memory": "128gb"
     },
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
