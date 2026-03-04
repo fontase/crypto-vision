@@ -1,275 +1,705 @@
-// Finite State Machine for Swarm Lifecycle
-// Implements SwarmStateMachine per Prompt 05
+/**
+ * Swarm State Machine — Finite state machine for swarm lifecycle management
+ *
+ * Features:
+ * - Typed phases with validated transitions
+ * - Async guard functions for transition authorization
+ * - Per-phase configurable timeouts with automatic escalation
+ * - Phase enter/exit hooks for lifecycle orchestration
+ * - Pause/resume with pre-pause phase preservation
+ * - Force transition for emergency bypass
+ * - Immutable audit trail of all transitions
+ * - Full event bus integration for observability
+ */
 
 import type {
-  SwarmPhase,
   PhaseTransition,
-  StateMachineConfig
-} from '../types';
-// Event bus is required, but file not found. We'll type as any for now and update when available.
-// import { SwarmEventBus } from './event-bus';
+  StateMachineConfig,
+  SwarmPhase,
+} from '../types.js';
 
-type SwarmEventBus = any; // TODO: Replace with actual import when available
+import type { SwarmEventBus } from './event-bus.js';
 
-export const DEFAULT_SWARM_TRANSITIONS: PhaseTransition[] = [
-  // idle → initializing → funding → [scanning | creating_narrative]
-  { from: 'idle', to: 'initializing' },
-  { from: 'initializing', to: 'funding' },
-  { from: 'funding', to: 'scanning' },
-  { from: 'funding', to: 'creating_narrative' },
-  // scanning → evaluating → [minting | scanning]
-  { from: 'scanning', to: 'evaluating' },
-  { from: 'evaluating', to: 'minting' },
-  { from: 'evaluating', to: 'scanning' },
-  // creating_narrative → minting
-  { from: 'creating_narrative', to: 'minting' },
-  // minting → bundling → distributing → trading
-  { from: 'minting', to: 'bundling' },
-  { from: 'bundling', to: 'distributing' },
-  { from: 'distributing', to: 'trading' },
-  // trading → [market_making | accumulating | graduating | exiting]
-  { from: 'trading', to: 'market_making' },
-  { from: 'trading', to: 'accumulating' },
-  { from: 'trading', to: 'graduating' },
-  { from: 'trading', to: 'exiting' },
-  // market_making → [trading | graduating | exiting]
-  { from: 'market_making', to: 'trading' },
-  { from: 'market_making', to: 'graduating' },
-  { from: 'market_making', to: 'exiting' },
-  // accumulating → [trading | graduating | exiting]
-  { from: 'accumulating', to: 'trading' },
-  { from: 'accumulating', to: 'graduating' },
-  { from: 'accumulating', to: 'exiting' },
-  // graduating → exiting
-  { from: 'graduating', to: 'exiting' },
-  // exiting → reclaiming → completed
-  { from: 'exiting', to: 'reclaiming' },
-  { from: 'reclaiming', to: 'completed' },
-  // Any phase → paused → (resume to previous)
-  { from: 'idle', to: 'paused' },
-  { from: 'initializing', to: 'paused' },
-  { from: 'funding', to: 'paused' },
-  { from: 'scanning', to: 'paused' },
-  { from: 'evaluating', to: 'paused' },
-  { from: 'creating_narrative', to: 'paused' },
-  { from: 'minting', to: 'paused' },
-  { from: 'bundling', to: 'paused' },
-  { from: 'distributing', to: 'paused' },
-  { from: 'trading', to: 'paused' },
-  { from: 'market_making', to: 'paused' },
-  { from: 'accumulating', to: 'paused' },
-  { from: 'graduating', to: 'paused' },
-  { from: 'exiting', to: 'paused' },
-  { from: 'reclaiming', to: 'paused' },
-  { from: 'completed', to: 'paused' },
-  { from: 'error', to: 'paused' },
-  { from: 'emergency_exit', to: 'paused' },
-  // paused → (resume to previous) handled in class
-  // Any phase → error → [reclaiming | emergency_exit]
-  { from: 'idle', to: 'error' },
-  { from: 'initializing', to: 'error' },
-  { from: 'funding', to: 'error' },
-  { from: 'scanning', to: 'error' },
-  { from: 'evaluating', to: 'error' },
-  { from: 'creating_narrative', to: 'error' },
-  { from: 'minting', to: 'error' },
-  { from: 'bundling', to: 'error' },
-  { from: 'distributing', to: 'error' },
-  { from: 'trading', to: 'error' },
-  { from: 'market_making', to: 'error' },
-  { from: 'accumulating', to: 'error' },
-  { from: 'graduating', to: 'error' },
-  { from: 'exiting', to: 'error' },
-  { from: 'reclaiming', to: 'error' },
-  { from: 'completed', to: 'error' },
-  { from: 'paused', to: 'error' },
-  { from: 'emergency_exit', to: 'error' },
-  // error → [reclaiming | emergency_exit]
-  { from: 'error', to: 'reclaiming' },
-  { from: 'error', to: 'emergency_exit' },
-  // emergency_exit → reclaiming → completed
-  { from: 'emergency_exit', to: 'reclaiming' },
-  { from: 'reclaiming', to: 'completed' },
-];
+// ─── Phase History Entry ──────────────────────────────────────
 
-interface PhaseHistoryEntry {
+export interface PhaseHistoryEntry {
+  /** The phase that was active */
   phase: SwarmPhase;
+  /** Unix epoch ms when the phase was entered */
   enteredAt: number;
+  /** Unix epoch ms when the phase was exited (undefined if current) */
   exitedAt?: number;
+  /** Duration in ms (undefined if current) */
   duration?: number;
 }
 
-type PhaseHandler = () => void | Promise<void>;
+// ─── Audit Log Entry ─────────────────────────────────────────
+
+export interface AuditLogEntry {
+  /** Timestamp of the transition */
+  timestamp: number;
+  /** Phase transitioned from */
+  from: SwarmPhase;
+  /** Phase transitioned to */
+  to: SwarmPhase;
+  /** Whether the transition was forced (guard bypass) */
+  forced: boolean;
+  /** Whether a guard was evaluated */
+  guardEvaluated: boolean;
+  /** Result of the guard (true = allowed, false = blocked, undefined = no guard) */
+  guardResult?: boolean;
+  /** Whether the transition succeeded */
+  success: boolean;
+  /** Error message if the transition failed */
+  error?: string;
+  /** Duration in the previous phase (ms) */
+  durationInPrevious: number;
+}
+
+// ─── Phase Hook Types ─────────────────────────────────────────
+
+type PhaseHook = () => void | Promise<void>;
+
+// ─── Default Timeouts ─────────────────────────────────────────
+
+const DEFAULT_PHASE_TIMEOUTS: Partial<Record<SwarmPhase, number>> = {
+  minting: 60_000,
+  bundling: 30_000,
+  initializing: 30_000,
+  funding: 120_000,
+  distributing: 60_000,
+};
+
+// ─── All non-terminal phases for wildcard transitions ─────────
+
+const ALL_OPERATIONAL_PHASES: readonly SwarmPhase[] = [
+  'idle',
+  'initializing',
+  'funding',
+  'scanning',
+  'evaluating',
+  'creating_narrative',
+  'minting',
+  'bundling',
+  'distributing',
+  'trading',
+  'market_making',
+  'accumulating',
+  'graduating',
+  'exiting',
+  'reclaiming',
+] as const;
+
+// ─── Default Transitions ─────────────────────────────────────
+
+function buildDefaultTransitions(): PhaseTransition[] {
+  const transitions: PhaseTransition[] = [
+    // Core lifecycle
+    { from: 'idle', to: 'initializing' },
+    { from: 'initializing', to: 'funding' },
+    { from: 'funding', to: 'scanning' },
+    { from: 'funding', to: 'creating_narrative' },
+
+    // Scanning loop
+    { from: 'scanning', to: 'evaluating' },
+    { from: 'evaluating', to: 'minting' },
+    { from: 'evaluating', to: 'scanning' },
+
+    // Narrative → mint
+    { from: 'creating_narrative', to: 'minting' },
+
+    // Mint → bundle → distribute → trade
+    { from: 'minting', to: 'bundling', timeoutMs: 60_000 },
+    { from: 'bundling', to: 'distributing', timeoutMs: 30_000 },
+    { from: 'distributing', to: 'trading' },
+
+    // Trading sub-phases
+    { from: 'trading', to: 'market_making' },
+    { from: 'trading', to: 'accumulating' },
+    { from: 'trading', to: 'graduating' },
+    { from: 'trading', to: 'exiting' },
+
+    // Market making transitions
+    { from: 'market_making', to: 'trading' },
+    { from: 'market_making', to: 'graduating' },
+    { from: 'market_making', to: 'exiting' },
+
+    // Accumulating transitions
+    { from: 'accumulating', to: 'trading' },
+    { from: 'accumulating', to: 'graduating' },
+    { from: 'accumulating', to: 'exiting' },
+
+    // Graduating → exiting
+    { from: 'graduating', to: 'exiting' },
+
+    // Exit flow
+    { from: 'exiting', to: 'reclaiming' },
+    { from: 'reclaiming', to: 'completed' },
+
+    // Error recovery
+    { from: 'error', to: 'reclaiming' },
+    { from: 'error', to: 'emergency_exit' },
+
+    // Emergency exit flow
+    { from: 'emergency_exit', to: 'reclaiming' },
+  ];
+
+  // Any operational phase → paused, error, emergency_exit
+  for (const phase of ALL_OPERATIONAL_PHASES) {
+    transitions.push({ from: phase, to: 'paused' });
+    transitions.push({ from: phase, to: 'error' });
+    transitions.push({ from: phase, to: 'emergency_exit' });
+  }
+
+  return transitions;
+}
+
+/**
+ * Default transition table for the pump agent swarm lifecycle.
+ *
+ * ```
+ * idle → initializing → funding → [scanning | creating_narrative]
+ * scanning → evaluating → [minting | scanning]
+ * creating_narrative → minting
+ * minting → bundling → distributing → trading
+ * trading → [market_making | accumulating | graduating | exiting]
+ * market_making → [trading | graduating | exiting]
+ * accumulating → [trading | graduating | exiting]
+ * graduating → exiting
+ * exiting → reclaiming → completed
+ * Any phase → paused → (resume to previous)
+ * Any phase → error → [reclaiming | emergency_exit]
+ * Any phase → emergency_exit → reclaiming → completed
+ * ```
+ */
+export const DEFAULT_SWARM_TRANSITIONS: PhaseTransition[] = buildDefaultTransitions();
+
+// ─── SwarmStateMachine ────────────────────────────────────────
 
 export class SwarmStateMachine {
-  private config: StateMachineConfig;
-  private eventBus: SwarmEventBus;
-  private _currentPhase: SwarmPhase;
-  private phaseHistory: PhaseHistoryEntry[] = [];
-  private phaseEnterHandlers: Map<SwarmPhase, PhaseHandler[]> = new Map();
-  private phaseExitHandlers: Map<SwarmPhase, PhaseHandler[]> = new Map();
-  private timeoutHandles: Map<SwarmPhase, NodeJS.Timeout> = new Map();
-  private auditLog: Array<{ from: SwarmPhase; to: SwarmPhase; at: number; reason?: string }> = [];
-  private pausedPhase: SwarmPhase | null = null;
-  private phaseStartTime: number = Date.now();
+  // ── Internal State ──────────────────────────────────────────
+  private phase: SwarmPhase;
+  private readonly config: StateMachineConfig;
+  private readonly eventBus: SwarmEventBus;
+
+  /** Immutable history of all phase entries */
+  private readonly history: PhaseHistoryEntry[] = [];
+
+  /** Immutable audit log of all transition attempts */
+  private readonly auditLog: AuditLogEntry[] = [];
+
+  /** Enter hooks keyed by phase */
+  private readonly enterHooks = new Map<SwarmPhase, PhaseHook[]>();
+
+  /** Exit hooks keyed by phase */
+  private readonly exitHooks = new Map<SwarmPhase, PhaseHook[]>();
+
+  /** Active timeout timer for the current phase */
+  private phaseTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** Phase before pause (for resume) */
+  private prePausePhase: SwarmPhase | undefined;
+
+  /** Whether a transition is currently in progress (prevents re-entrancy) */
+  private transitioning = false;
+
+  /** Timestamp when the current phase was entered */
+  private phaseEnteredAt: number;
+
+  /** Lookup index: from → Set<to> for O(1) validity checks */
+  private readonly transitionIndex = new Map<SwarmPhase, Set<SwarmPhase>>();
+
+  /** Lookup index: from:to → PhaseTransition for guard/action access */
+  private readonly transitionMap = new Map<string, PhaseTransition>();
 
   constructor(config: StateMachineConfig, eventBus: SwarmEventBus) {
     this.config = config;
     this.eventBus = eventBus;
-    this._currentPhase = config.initialPhase;
-    this.phaseHistory.push({ phase: this._currentPhase, enteredAt: Date.now() });
-    this.emitEvent('phase:entered', { phase: this._currentPhase, duration_in_previous: 0 });
-    this.setupTimeout(this._currentPhase);
+    this.phase = config.initialPhase;
+    this.phaseEnteredAt = Date.now();
+
+    // Build lookup indexes
+    this.rebuildIndexes();
+
+    // Record initial phase in history
+    this.history.push({
+      phase: config.initialPhase,
+      enteredAt: this.phaseEnteredAt,
+    });
+
+    // Start timeout for initial phase if configured
+    this.startPhaseTimeout(config.initialPhase);
   }
 
+  // ── Public Getters ──────────────────────────────────────────
+
+  /** Current phase of the state machine */
   get currentPhase(): SwarmPhase {
-    return this._currentPhase;
+    return this.phase;
   }
 
-  async transition(to: SwarmPhase): Promise<boolean> {
-    if (!this.canTransition(to)) throw new Error(`Invalid transition: ${this._currentPhase} → ${to}`);
-    const transition = this.config.transitions.find(t => t.from === this._currentPhase && t.to === to);
-    if (transition?.guard && !(await transition.guard())) return false;
-    await this.runPhaseExitHandlers(this._currentPhase);
-    this.emitEvent('phase:entering', { from: this._currentPhase, to });
-    this.recordAudit(this._currentPhase, to);
-    this.clearTimeout(this._currentPhase);
-    const prevPhase = this._currentPhase;
-    this._currentPhase = to;
-    this.phaseHistory[this.phaseHistory.length - 1].exitedAt = Date.now();
-    this.phaseHistory[this.phaseHistory.length - 1].duration = this.phaseHistory[this.phaseHistory.length - 1].exitedAt! - this.phaseHistory[this.phaseHistory.length - 1].enteredAt;
-    this.phaseHistory.push({ phase: to, enteredAt: Date.now() });
-    this.phaseStartTime = Date.now();
-    if (transition?.action) await transition.action();
-    await this.runPhaseEnterHandlers(to);
-    this.emitEvent('phase:entered', { phase: to, duration_in_previous: this.getPhaseDuration(prevPhase) });
-    this.setupTimeout(to);
-    return true;
-  }
+  // ── Transition Validation ───────────────────────────────────
 
+  /**
+   * Check whether a transition from the current phase to `to` is defined
+   * in the transition table.
+   */
   canTransition(to: SwarmPhase): boolean {
-    return this.config.transitions.some(t => t.from === this._currentPhase && t.to === to);
+    const targets = this.transitionIndex.get(this.phase);
+    return targets !== undefined && targets.has(to);
   }
 
+  /**
+   * List all phases reachable from the current phase.
+   */
   getValidTransitions(): SwarmPhase[] {
-    return this.config.transitions.filter(t => t.from === this._currentPhase).map(t => t.to);
+    const targets = this.transitionIndex.get(this.phase);
+    return targets ? [...targets] : [];
   }
 
-  getPhaseHistory(): PhaseHistoryEntry[] {
-    return [...this.phaseHistory];
+  // ── Transition ──────────────────────────────────────────────
+
+  /**
+   * Attempt a guarded transition from the current phase to `to`.
+   *
+   * 1. Validates the transition is defined
+   * 2. Evaluates the guard (if any)
+   * 3. Runs exit hooks for current phase
+   * 4. Runs the transition action (if any)
+   * 5. Runs enter hooks for the new phase
+   * 6. Emits events to the event bus
+   * 7. Records audit log entry
+   *
+   * Returns `true` if the transition succeeded, `false` if blocked by a guard.
+   * Throws if the transition is undefined or if an error occurs during hooks/actions.
+   */
+  async transition(to: SwarmPhase): Promise<boolean> {
+    if (this.transitioning) {
+      throw new Error(
+        `Re-entrant transition detected: cannot transition to '${to}' while already transitioning`,
+      );
+    }
+
+    if (!this.canTransition(to)) {
+      const entry = this.createAuditEntry(this.phase, to, false, false, undefined, false, `Invalid transition: '${this.phase}' → '${to}'`);
+      this.auditLog.push(Object.freeze(entry));
+      throw new Error(
+        `Invalid transition: '${this.phase}' → '${to}'. Valid targets: [${this.getValidTransitions().join(', ')}]`,
+      );
+    }
+
+    this.transitioning = true;
+    const from = this.phase;
+    const transitionDef = this.transitionMap.get(`${from}:${to}`);
+    const now = Date.now();
+    const durationInPrevious = now - this.phaseEnteredAt;
+
+    try {
+      // Evaluate guard
+      if (transitionDef?.guard) {
+        const allowed = await transitionDef.guard();
+        if (!allowed) {
+          const entry = this.createAuditEntry(from, to, false, true, false, false);
+          this.auditLog.push(Object.freeze(entry));
+          return false;
+        }
+      }
+
+      // Emit entering event
+      this.eventBus.emit('phase:entering', 'lifecycle', 'state-machine', {
+        from,
+        to,
+      });
+
+      // Run exit hooks for current phase
+      await this.runHooks(this.exitHooks.get(from));
+
+      // Run transition action
+      if (transitionDef?.action) {
+        await transitionDef.action();
+      }
+
+      // Clear current phase timeout
+      this.clearPhaseTimeout();
+
+      // Close current history entry
+      const currentEntry = this.history[this.history.length - 1];
+      if (currentEntry && currentEntry.exitedAt === undefined) {
+        currentEntry.exitedAt = now;
+        currentEntry.duration = now - currentEntry.enteredAt;
+      }
+
+      // Update phase
+      this.phase = to;
+      this.phaseEnteredAt = now;
+
+      // Track pre-pause phase
+      if (to === 'paused') {
+        this.prePausePhase = from;
+      } else if (from === 'paused') {
+        this.prePausePhase = undefined;
+      }
+
+      // Add new history entry
+      this.history.push({
+        phase: to,
+        enteredAt: now,
+      });
+
+      // Start timeout for new phase
+      this.startPhaseTimeout(to);
+
+      // Run enter hooks for new phase
+      await this.runHooks(this.enterHooks.get(to));
+
+      // Emit entered event
+      this.eventBus.emit('phase:entered', 'lifecycle', 'state-machine', {
+        phase: to,
+        duration_in_previous: durationInPrevious,
+      });
+
+      // Record audit entry
+      const auditEntry = this.createAuditEntry(
+        from,
+        to,
+        false,
+        transitionDef?.guard !== undefined,
+        transitionDef?.guard !== undefined ? true : undefined,
+        true,
+      );
+      this.auditLog.push(Object.freeze(auditEntry));
+
+      return true;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+
+      // Emit phase error
+      this.eventBus.emit('phase:error', 'error', 'state-machine', {
+        phase: from,
+        error: errorMessage,
+      });
+
+      // Record failed audit entry
+      const auditEntry = this.createAuditEntry(from, to, false, false, undefined, false, errorMessage);
+      this.auditLog.push(Object.freeze(auditEntry));
+
+      // Delegate to error handler
+      const recoveryPhase = this.config.onError(
+        err instanceof Error ? err : new Error(errorMessage),
+        from,
+      );
+
+      // If the error handler returns a different phase, force-transition there
+      if (recoveryPhase !== from && recoveryPhase !== to) {
+        this.forceTransition(recoveryPhase);
+      }
+
+      throw err;
+    } finally {
+      this.transitioning = false;
+    }
   }
 
-  getCurrentPhaseDuration(): number {
-    return Date.now() - this.phaseStartTime;
-  }
+  // ── Force Transition (Emergency) ────────────────────────────
 
-  onPhaseEnter(phase: SwarmPhase, handler: PhaseHandler): void {
-    if (!this.phaseEnterHandlers.has(phase)) this.phaseEnterHandlers.set(phase, []);
-    this.phaseEnterHandlers.get(phase)!.push(handler);
-  }
-
-  onPhaseExit(phase: SwarmPhase, handler: PhaseHandler): void {
-    if (!this.phaseExitHandlers.has(phase)) this.phaseExitHandlers.set(phase, []);
-    this.phaseExitHandlers.get(phase)!.push(handler);
-  }
-
+  /**
+   * Immediately transition to `to` without evaluating guards.
+   * Use for emergency situations (e.g., forced error recovery).
+   *
+   * Still records audit log and emits events, but skips guards and
+   * does not run transition actions.
+   */
   forceTransition(to: SwarmPhase): void {
-    this.recordAudit(this._currentPhase, to, 'force');
-    this.clearTimeout(this._currentPhase);
-    this._currentPhase = to;
-    this.phaseHistory.push({ phase: to, enteredAt: Date.now() });
-    this.phaseStartTime = Date.now();
-    this.emitEvent('phase:entered', { phase: to, duration_in_previous: 0 });
-    this.setupTimeout(to);
+    const from = this.phase;
+    const now = Date.now();
+    const durationInPrevious = now - this.phaseEnteredAt;
+
+    // Emit entering event
+    this.eventBus.emit('phase:entering', 'lifecycle', 'state-machine', {
+      from,
+      to,
+      forced: true,
+    });
+
+    // Clear current phase timeout
+    this.clearPhaseTimeout();
+
+    // Close current history entry
+    const currentEntry = this.history[this.history.length - 1];
+    if (currentEntry && currentEntry.exitedAt === undefined) {
+      currentEntry.exitedAt = now;
+      currentEntry.duration = now - currentEntry.enteredAt;
+    }
+
+    // Update phase
+    this.phase = to;
+    this.phaseEnteredAt = now;
+
+    // Track pre-pause phase
+    if (to === 'paused') {
+      this.prePausePhase = from;
+    }
+
+    // Add history entry
+    this.history.push({
+      phase: to,
+      enteredAt: now,
+    });
+
+    // Start timeout for new phase
+    this.startPhaseTimeout(to);
+
+    // Emit entered event
+    this.eventBus.emit('phase:entered', 'lifecycle', 'state-machine', {
+      phase: to,
+      duration_in_previous: durationInPrevious,
+      forced: true,
+    });
+
+    // Audit
+    const auditEntry = this.createAuditEntry(from, to, true, false, undefined, true);
+    this.auditLog.push(Object.freeze(auditEntry));
   }
 
+  // ── Pause / Resume ──────────────────────────────────────────
+
+  /**
+   * Transition to 'paused' if not already paused or completed.
+   * Preserves the current phase for later resume.
+   */
   pause(): void {
-    if (this._currentPhase === 'paused') return;
-    this.pausedPhase = this._currentPhase;
+    if (this.phase === 'paused') return;
+    if (this.phase === 'completed') {
+      throw new Error('Cannot pause a completed state machine');
+    }
     this.forceTransition('paused');
   }
 
+  /**
+   * Return to the phase that was active before pause.
+   * Throws if the machine is not currently paused.
+   */
   resume(): void {
-    if (this._currentPhase !== 'paused' || !this.pausedPhase) return;
-    const to = this.pausedPhase;
-    this.pausedPhase = null;
-    this.forceTransition(to);
+    if (this.phase !== 'paused') {
+      throw new Error(`Cannot resume: current phase is '${this.phase}', not 'paused'`);
+    }
+
+    if (this.prePausePhase === undefined) {
+      throw new Error('Cannot resume: no pre-pause phase recorded');
+    }
+
+    const target = this.prePausePhase;
+    this.prePausePhase = undefined;
+    this.forceTransition(target);
   }
 
+  // ── Reset ───────────────────────────────────────────────────
+
+  /**
+   * Reset the state machine to its initial phase.
+   * Clears timeouts but preserves history and audit log.
+   */
   reset(): void {
-    this._currentPhase = this.config.initialPhase;
-    this.phaseHistory = [{ phase: this._currentPhase, enteredAt: Date.now() }];
-    this.phaseStartTime = Date.now();
-    this.emitEvent('phase:entered', { phase: this._currentPhase, duration_in_previous: 0 });
-    this.setupTimeout(this._currentPhase);
-  }
+    this.clearPhaseTimeout();
 
-  private async runPhaseEnterHandlers(phase: SwarmPhase) {
-    const handlers = this.phaseEnterHandlers.get(phase) || [];
-    for (const h of handlers) await h();
-  }
+    const from = this.phase;
+    const now = Date.now();
 
-  private async runPhaseExitHandlers(phase: SwarmPhase) {
-    const handlers = this.phaseExitHandlers.get(phase) || [];
-    for (const h of handlers) await h();
-  }
-
-  private setupTimeout(phase: SwarmPhase) {
-    const transition = this.config.transitions.find(t => t.from === phase);
-    const timeoutMs = transition?.timeoutMs;
-    if (timeoutMs && timeoutMs > 0) {
-      const handle = setTimeout(() => {
-        this.emitEvent('phase:timeout', { phase, timeoutMs });
-        const next = this.config.onTimeout(phase);
-        if (next && this.canTransition(next)) {
-          this.transition(next).catch(err => this.emitEvent('phase:error', { phase, error: err }));
-        }
-      }, timeoutMs);
-      this.timeoutHandles.set(phase, handle);
+    // Close current history entry
+    const currentEntry = this.history[this.history.length - 1];
+    if (currentEntry && currentEntry.exitedAt === undefined) {
+      currentEntry.exitedAt = now;
+      currentEntry.duration = now - currentEntry.enteredAt;
     }
-  }
 
-  private clearTimeout(phase: SwarmPhase) {
-    const handle = this.timeoutHandles.get(phase);
-    if (handle) {
-      clearTimeout(handle);
-      this.timeoutHandles.delete(phase);
-    }
-  }
+    this.phase = this.config.initialPhase;
+    this.phaseEnteredAt = now;
+    this.prePausePhase = undefined;
+    this.transitioning = false;
 
-  private emitEvent(type: string, payload: Record<string, unknown>) {
-    if (this.eventBus && typeof this.eventBus.emit === 'function') {
-      this.eventBus.emit({
-        id: this.generateId(),
-        type,
-        category: 'lifecycle',
-        source: 'SwarmStateMachine',
-        payload,
-        timestamp: Date.now(),
-      });
-    }
-  }
-
-  private recordAudit(from: SwarmPhase, to: SwarmPhase, reason?: string) {
-    this.auditLog.push({ from, to, at: Date.now(), reason });
-  }
-
-  getAuditLog() {
-    return [...this.auditLog];
-  }
-
-  private getPhaseDuration(phase: SwarmPhase): number {
-    const entry = this.phaseHistory.find(h => h.phase === phase);
-    if (!entry) return 0;
-    return (entry.exitedAt ?? Date.now()) - entry.enteredAt;
-  }
-
-  private generateId(): string {
-    // Simple UUID v4 generator
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r = (Math.random() * 16) | 0,
-        v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
+    // Record reset in history
+    this.history.push({
+      phase: this.config.initialPhase,
+      enteredAt: now,
     });
+
+    // Audit
+    const auditEntry = this.createAuditEntry(from, this.config.initialPhase, true, false, undefined, true);
+    this.auditLog.push(Object.freeze(auditEntry));
+
+    // Emit event
+    this.eventBus.emit('phase:entered', 'lifecycle', 'state-machine', {
+      phase: this.config.initialPhase,
+      reset: true,
+    });
+
+    // Start timeout for initial phase
+    this.startPhaseTimeout(this.config.initialPhase);
+  }
+
+  // ── Phase History ───────────────────────────────────────────
+
+  /**
+   * Return the full phase history with entry/exit timestamps and durations.
+   * The last entry will have `exitedAt` and `duration` undefined if still active.
+   */
+  getPhaseHistory(): Array<{ phase: SwarmPhase; enteredAt: number; exitedAt?: number; duration?: number }> {
+    return this.history.map((entry) => ({ ...entry }));
+  }
+
+  /**
+   * Return how long (in ms) the machine has been in the current phase.
+   */
+  getCurrentPhaseDuration(): number {
+    return Date.now() - this.phaseEnteredAt;
+  }
+
+  // ── Audit Log ───────────────────────────────────────────────
+
+  /**
+   * Return the full immutable audit log of all transition attempts.
+   */
+  getAuditLog(): readonly AuditLogEntry[] {
+    return this.auditLog;
+  }
+
+  // ── Phase Hooks ─────────────────────────────────────────────
+
+  /**
+   * Register a handler to run when the machine enters `phase`.
+   * Multiple handlers per phase are supported (called in registration order).
+   */
+  onPhaseEnter(phase: SwarmPhase, handler: PhaseHook): void {
+    const hooks = this.enterHooks.get(phase);
+    if (hooks) {
+      hooks.push(handler);
+    } else {
+      this.enterHooks.set(phase, [handler]);
+    }
+  }
+
+  /**
+   * Register a handler to run when the machine exits `phase`.
+   * Multiple handlers per phase are supported (called in registration order).
+   */
+  onPhaseExit(phase: SwarmPhase, handler: PhaseHook): void {
+    const hooks = this.exitHooks.get(phase);
+    if (hooks) {
+      hooks.push(handler);
+    } else {
+      this.exitHooks.set(phase, [handler]);
+    }
+  }
+
+  // ── Cleanup ─────────────────────────────────────────────────
+
+  /**
+   * Clear all timers and hooks. Call when the state machine is no longer needed.
+   */
+  destroy(): void {
+    this.clearPhaseTimeout();
+    this.enterHooks.clear();
+    this.exitHooks.clear();
+    this.transitioning = false;
+  }
+
+  // ── Internal: Index Management ──────────────────────────────
+
+  private rebuildIndexes(): void {
+    this.transitionIndex.clear();
+    this.transitionMap.clear();
+
+    for (const t of this.config.transitions) {
+      let targets = this.transitionIndex.get(t.from);
+      if (!targets) {
+        targets = new Set<SwarmPhase>();
+        this.transitionIndex.set(t.from, targets);
+      }
+      targets.add(t.to);
+      this.transitionMap.set(`${t.from}:${t.to}`, t);
+    }
+  }
+
+  // ── Internal: Phase Timeouts ────────────────────────────────
+
+  private startPhaseTimeout(phase: SwarmPhase): void {
+    this.clearPhaseTimeout();
+
+    // Find timeout from transition definitions or defaults
+    const timeoutMs = this.getPhaseTimeout(phase);
+    if (timeoutMs === undefined || timeoutMs <= 0) return;
+
+    this.phaseTimer = setTimeout(() => {
+      this.phaseTimer = undefined;
+
+      // Emit timeout event
+      this.eventBus.emit('phase:timeout', 'lifecycle', 'state-machine', {
+        phase,
+        timeoutMs,
+      });
+
+      // Ask config handler where to go
+      const nextPhase = this.config.onTimeout(phase);
+      if (nextPhase !== phase) {
+        this.forceTransition(nextPhase);
+      }
+    }, timeoutMs);
+  }
+
+  private clearPhaseTimeout(): void {
+    if (this.phaseTimer !== undefined) {
+      clearTimeout(this.phaseTimer);
+      this.phaseTimer = undefined;
+    }
+  }
+
+  /**
+   * Resolve the timeout for a given phase.
+   * Priority: transition-level timeoutMs > default phase timeouts.
+   */
+  private getPhaseTimeout(phase: SwarmPhase): number | undefined {
+    // Check if any transition FROM this phase has a timeoutMs
+    for (const t of this.config.transitions) {
+      if (t.from === phase && t.timeoutMs !== undefined && t.timeoutMs > 0) {
+        return t.timeoutMs;
+      }
+    }
+
+    // Fall back to built-in defaults
+    return DEFAULT_PHASE_TIMEOUTS[phase];
+  }
+
+  // ── Internal: Hook Execution ────────────────────────────────
+
+  private async runHooks(hooks: PhaseHook[] | undefined): Promise<void> {
+    if (!hooks || hooks.length === 0) return;
+
+    for (const hook of hooks) {
+      await hook();
+    }
+  }
+
+  // ── Internal: Audit Entry ───────────────────────────────────
+
+  private createAuditEntry(
+    from: SwarmPhase,
+    to: SwarmPhase,
+    forced: boolean,
+    guardEvaluated: boolean,
+    guardResult: boolean | undefined,
+    success: boolean,
+    error?: string,
+  ): AuditLogEntry {
+    return {
+      timestamp: Date.now(),
+      from,
+      to,
+      forced,
+      guardEvaluated,
+      guardResult,
+      success,
+      error,
+      durationInPrevious: Date.now() - this.phaseEnteredAt,
+    };
   }
 }

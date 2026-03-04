@@ -306,12 +306,16 @@ export class SwarmEventBus {
     eventsByCategory: Record<SwarmEventCategory, number>;
   } {
     const categories: SwarmEventCategory[] = [
+      'lifecycle',
       'trading',
       'analytics',
-      'lifecycle',
+      'bundle',
+      'intelligence',
+      'coordination',
       'system',
       'wallet',
       'error',
+      'metrics',
     ];
 
     const eventsByCategory = {} as Record<SwarmEventCategory, number>;

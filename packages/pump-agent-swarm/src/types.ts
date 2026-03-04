@@ -9,10 +9,6 @@ import type { Keypair } from '@solana/web3.js';
 // PublicKey and TransactionInstruction used transitively by pump-sdk types
 import type BN from 'bn.js';
 
-// ─── Agent Roles ──────────────────────────────────────────────
-
-export type AgentRole = 'creator' | 'trader' | 'analyst' | 'sniper';
-
 // ─── Wallet Types ─────────────────────────────────────────────
 
 export interface AgentWallet {
@@ -33,42 +29,6 @@ export interface WalletPool {
   traders: AgentWallet[];
   /** Optional fee recipient wallet */
   feeRecipient?: AgentWallet;
-}
-
-// ─── Wallet Vault Types ───────────────────────────────────────
-
-export interface WalletVaultConfig {
-  /** Number of wallets to generate in the pool */
-  poolSize: number;
-  /** BIP-39 mnemonic for HD derivation (if not provided, random wallets are generated) */
-  mnemonic?: string;
-  /** Minimum SOL balance in lamports before triggering low-balance alert */
-  minBalanceLamports: BN;
-  /** Maximum concurrent lock duration in milliseconds (default: 60000) */
-  lockTimeoutMs?: number;
-  /** Encryption password for key storage */
-  encryptionPassword?: string;
-  /** Auto-refund from funder when balance drops below minimum */
-  autoRefund?: boolean;
-  /** Auto-refund amount in lamports when triggered */
-  autoRefundAmountLamports?: BN;
-}
-
-export interface WalletAssignment {
-  /** The assigned wallet */
-  wallet: AgentWallet;
-  /** Agent ID that owns this assignment */
-  agentId: string;
-  /** Role of the assigned agent */
-  role: AgentRole;
-  /** Timestamp when the wallet was assigned */
-  assignedAt: number;
-  /** Whether the wallet is currently locked for a transaction */
-  locked: boolean;
-  /** Transaction signature that caused the lock (if locked) */
-  lockTxSignature?: string;
-  /** Timestamp when the wallet was locked */
-  lockedAt?: number;
 }
 
 // ─── Token Types ──────────────────────────────────────────────
@@ -354,49 +314,6 @@ export interface RpcPoolConfig {
   retryBaseDelayMs?: number;
 }
 
-// ─── Event Bus Types ──────────────────────────────────────────
-
-/** Categories for swarm events, used for filtering and stats */
-export type SwarmEventCategory =
-  | 'trading'
-  | 'analytics'
-  | 'lifecycle'
-  | 'system'
-  | 'wallet'
-  | 'error';
-
-/** A single event emitted on the swarm event bus */
-export interface SwarmEvent {
-  /** Unique event identifier (UUID v4) */
-  id: string;
-  /** Dot- or colon-delimited event type (e.g. "trade:executed") */
-  type: string;
-  /** High-level category for grouping */
-  category: SwarmEventCategory;
-  /** Identifier of the component that emitted the event */
-  source: string;
-  /** Arbitrary structured payload */
-  payload: Record<string, unknown>;
-  /** Optional correlation ID for tracing related events */
-  correlationId?: string;
-  /** Unix epoch ms when the event was created */
-  timestamp: number;
-}
-
-/** Internal representation of an event subscription */
-export interface EventSubscription {
-  /** Unique subscription identifier (UUID v4) */
-  id: string;
-  /** Pattern string used for matching (supports wildcards) */
-  pattern: string;
-  /** Callback invoked when a matching event fires */
-  handler: (event: SwarmEvent) => void | Promise<void>;
-  /** Optional predicate applied after pattern matching */
-  filter?: (event: SwarmEvent) => boolean;
-  /** Source identifier that created this subscription (for bulk unsubscribe) */
-  source?: string;
-}
-
 // ─── Events ───────────────────────────────────────────────────
 
 export interface SwarmEvents {
@@ -457,9 +374,12 @@ export interface RpcPoolConfig {
 export type SwarmEventCategory =
   | 'lifecycle'
   | 'trading'
+  | 'analytics'
   | 'bundle'
   | 'intelligence'
   | 'coordination'
+  | 'system'
+  | 'wallet'
   | 'error'
   | 'metrics';
 
@@ -491,6 +411,8 @@ export interface EventSubscription {
   replay?: boolean;
   /** Filter function */
   filter?: (event: SwarmEvent) => boolean;
+  /** Source identifier that created this subscription (for bulk unsubscribe) */
+  source?: string;
 }
 
 // ─── State Machine Types ──────────────────────────────────────
@@ -547,6 +469,7 @@ export interface StateMachineConfig {
 export type AgentRole =
   | 'creator'
   | 'trader'
+  | 'analyst'
   | 'sniper'
   | 'market_maker'
   | 'volume_bot'
@@ -578,31 +501,37 @@ export interface AgentIdentity {
 // ─── Wallet Vault Types ───────────────────────────────────────
 
 export interface WalletVaultConfig {
-  /** Master seed phrase (BIP-39) for deterministic derivation */
-  masterSeed?: string;
-  /** Number of wallets to pre-generate */
+  /** Number of wallets to generate in the pool */
   poolSize: number;
-  /** Minimum SOL balance to maintain per wallet */
+  /** BIP-39 mnemonic for HD derivation (if not provided, random wallets are generated) */
+  mnemonic?: string;
+  /** Minimum SOL balance in lamports before triggering low-balance alert */
   minBalanceLamports: BN;
-  /** Auto-refund threshold — reclaim if balance exceeds this */
-  maxBalanceLamports: BN;
-  /** Whether to encrypt keys at rest */
-  encryptAtRest: boolean;
-  /** Encryption password (required if encryptAtRest is true) */
+  /** Maximum concurrent lock duration in milliseconds (default: 60000) */
+  lockTimeoutMs?: number;
+  /** Encryption password for key storage */
   encryptionPassword?: string;
+  /** Auto-refund from funder when balance drops below minimum */
+  autoRefund?: boolean;
+  /** Auto-refund amount in lamports when triggered */
+  autoRefundAmountLamports?: BN;
 }
 
 export interface WalletAssignment {
-  /** Agent ID this wallet is assigned to */
-  agentId: string;
-  /** Wallet */
+  /** The assigned wallet */
   wallet: AgentWallet;
-  /** When assigned */
+  /** Agent ID that owns this assignment */
+  agentId: string;
+  /** Role of the assigned agent */
+  role: AgentRole;
+  /** Timestamp when the wallet was assigned */
   assignedAt: number;
-  /** Whether currently locked (in-use for a transaction) */
+  /** Whether the wallet is currently locked for a transaction */
   locked: boolean;
-  /** Transaction currently using this wallet */
-  activeTxSignature?: string;
+  /** Transaction signature that caused the lock (if locked) */
+  lockTxSignature?: string;
+  /** Timestamp when the wallet was locked */
+  lockedAt?: number;
 }
 
 // ─── Configuration Types ──────────────────────────────────────

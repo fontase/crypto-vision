@@ -50,6 +50,8 @@ export { TraderAgent } from './agents/trader-agent.js';
 
 // ─── Infrastructure ──────────────────────────────────────────
 export { RpcPool, DEFAULT_RPC_ENDPOINTS } from './infra/rpc-pool.js';
+export { SwarmLogger } from './infra/logger.js';
+export type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
 
 // ─── Analytics (x402) ─────────────────────────────────────────
 export { AnalyticsClient } from './analytics/x402-client.js';
