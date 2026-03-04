@@ -274,46 +274,6 @@ export interface TraderStats {
   lastTradeAt?: number;
 }
 
-// ─── RPC Pool Types ──────────────────────────────────────────
-
-export interface RpcEndpoint {
-  /** Full RPC URL (e.g. https://api.mainnet-beta.solana.com) */
-  url: string;
-  /** Relative weight for load balancing (higher = more traffic) */
-  weight: number;
-  /** Max requests per second for this endpoint */
-  rateLimit: number;
-  /** Whether this endpoint supports Jito bundle submission */
-  supportsJito: boolean;
-  /** Provider name for logging/metrics */
-  provider: string;
-  /** Whether this endpoint is currently healthy */
-  healthy?: boolean;
-  /** Rolling average latency in ms (last 10 checks) */
-  latencyMs?: number;
-  /** Consecutive health check failures */
-  consecutiveFailures?: number;
-  /** Timestamp of last successful health check */
-  lastHealthCheck?: number;
-}
-
-export interface RpcPoolConfig {
-  /** List of RPC endpoints to load-balance across */
-  endpoints: RpcEndpoint[];
-  /** Health check interval in milliseconds (default: 30_000) */
-  healthCheckIntervalMs?: number;
-  /** Maximum consecutive failures before marking unhealthy (default: 3) */
-  maxConsecutiveFailures?: number;
-  /** Whether to prefer low-latency endpoints (default: true) */
-  preferLowLatency?: boolean;
-  /** Connection commitment level (default: 'confirmed') */
-  commitment?: 'processed' | 'confirmed' | 'finalized';
-  /** Maximum retries for sendRequest (default: 3) */
-  maxRetries?: number;
-  /** Base delay for exponential backoff in ms (default: 500) */
-  retryBaseDelayMs?: number;
-}
-
 // ─── Events ───────────────────────────────────────────────────
 
 export interface SwarmEvents {

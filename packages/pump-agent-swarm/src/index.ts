@@ -47,6 +47,14 @@ export { SwarmCoordinator } from './swarm.js';
 // ─── Agents ───────────────────────────────────────────────────
 export { CreatorAgent } from './agents/creator-agent.js';
 export { TraderAgent } from './agents/trader-agent.js';
+export { AccumulatorAgent } from './agents/accumulator-agent.js';
+export type {
+  AccumulatorConfig,
+  AccumulationStrategy,
+  AccumulationProgress,
+} from './agents/accumulator-agent.js';
+export { VolumeAgent } from './agents/volume-agent.js';
+export type { VolumeConfig, VolumeStats } from './agents/volume-agent.js';
 
 // ─── Infrastructure ──────────────────────────────────────────
 export { RpcPool, DEFAULT_RPC_ENDPOINTS } from './infra/rpc-pool.js';
@@ -56,15 +64,45 @@ export type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
 // ─── Analytics (x402) ─────────────────────────────────────────
 export { AnalyticsClient } from './analytics/x402-client.js';
 
+// ─── Trading ──────────────────────────────────────────────────
+export { VolumeGenerator } from './trading/volume-generator.js';
+export type {
+  VolumeCurve,
+  VolumeGeneratorConfig,
+  VolumeBucket,
+  VolumePlan,
+} from './trading/volume-generator.js';
+
 // ─── Wallet Management ────────────────────────────────────────
 export {
   createAgentWallet,
   restoreAgentWallet,
   generateWalletPool,
-  refreshBalances,
+  refreTrading ──────────────────────────────────────────────────
+export { WalletRotation } from './trading/wallet-rotation.js';
+export type { RotationConfig, WalletUsageStats } from './trading/wallet-rotation.js';
+
+// ─── shBalances,
   fundTraders,
   reclaimFunds,
   exportWalletKeys,
+
+// ─── Configuration ────────────────────────────────────────────
+export {
+  createSwarmConfig,
+  loadSwarmConfigFromEnv,
+  validateSwarmConfig,
+  DEFAULT_SWARM_CONFIG,
+  DEFAULT_RPC_CONFIG,
+  DEFAULT_WALLET_CONFIG,
+  DEFAULT_BUNDLE_CONFIG,
+  DEFAULT_INTELLIGENCE_CONFIG,
+  DEFAULT_DASHBOARD_CONFIG,
+  DEFAULT_ANALYTICS_CONFIG,
+  DEFAULT_EMERGENCY_EXIT_CONFIG,
+  DEFAULT_AGENT_COUNTS,
+} from './config/index.js';
+export type { ValidationResult } from './config/index.js';
   getPoolSummary,
   WalletVault,
 } from './wallet-manager.js';

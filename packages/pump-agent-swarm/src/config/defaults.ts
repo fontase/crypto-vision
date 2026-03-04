@@ -49,8 +49,6 @@ export const DEFAULT_RPC_CONFIG: RpcPoolConfig = {
 export const DEFAULT_WALLET_CONFIG: WalletVaultConfig = {
   poolSize: 8,
   minBalanceLamports: new BN(0.01 * LAMPORTS_PER_SOL),
-  maxBalanceLamports: new BN(10 * LAMPORTS_PER_SOL),
-  encryptAtRest: false,
 };
 
 // ─── Bundle Defaults ──────────────────────────────────────────
@@ -106,6 +104,7 @@ export const DEFAULT_EMERGENCY_EXIT_CONFIG: EmergencyExitConfig = {
 export const DEFAULT_AGENT_COUNTS: Record<AgentRole, number> = {
   creator: 1,
   trader: 5,
+  analyst: 0,
   sniper: 0,
   market_maker: 0,
   volume_bot: 0,
