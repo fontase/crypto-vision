@@ -95,6 +95,25 @@ export type {
 } from './infra/error-handler.js';
 export type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
 
+// ─── Coordination ─────────────────────────────────────────────
+export { ConsensusEngine } from './coordination/consensus-engine.js';
+export type {
+  ConsensusConfig,
+  VotingStrategy,
+  VoteDirection,
+  ProposalStatus,
+  ConsensusDecision,
+  ProposalType,
+  ProposalUrgency,
+  OverrideAction,
+  OverrideRule,
+  ProposedAction,
+  AgentVote,
+  VoteStats,
+  ConsensusResult,
+  Proposal,
+} from './coordination/consensus-engine.js';
+
 // ─── Trading ──────────────────────────────────────────────────
 export { GasOptimizer, DEFAULT_GAS_CONFIG } from './trading/gas-optimizer.js';
 export type {
@@ -120,6 +139,15 @@ export type {
   SwarmMetricsInput,
   PerformanceMetrics,
 } from './intelligence/strategy-brain.js';
+export { NarrativeGenerator } from './intelligence/narrative-generator.js';
+export type {
+  NarrativeGeneratorConfig,
+  NarrativeConstraints,
+  GeneratorTokenNarrative,
+  RankedNarrative,
+  ViralityFactors,
+  CategoryTrend,
+} from './intelligence/narrative-generator.js';
 
 // ─── Trading ──────────────────────────────────────────────────
 export { VolumeGenerator } from './trading/volume-generator.js';
