@@ -30,6 +30,7 @@
 - [Self-Hosting](#self-hosting)
 - [Performance](#performance)
 - [Project Structure](#project-structure)
+- [Documentation](#documentation)
 
 ---
 
@@ -1062,6 +1063,7 @@ crypto-vision/
 │   ├── AGENTS.md               # 43+ AI agents guide
 │   ├── API_REFERENCE.md        # Complete 300+ endpoint reference
 │   ├── ARCHITECTURE.md         # System architecture & data flow
+│   ├── COINGECKO_RATE_LIMITING.md # CoinGecko rate limiting strategy
 │   ├── CONFIGURATION.md        # Environment variables reference
 │   ├── DATABASE.md             # PostgreSQL & BigQuery schemas
 │   ├── DATA_PIPELINE.md        # Workers, ingestion, Pub/Sub
@@ -1090,6 +1092,34 @@ crypto-vision/
 ├── vitest.config.ts            # Test configuration
 └── tsconfig.json               # TypeScript configuration
 ```
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| [AGENTS.md](docs/AGENTS.md) | 58 AI agents — categories, architecture, orchestration, localization |
+| [API_REFERENCE.md](docs/API_REFERENCE.md) | Complete 538+ endpoint reference across 40 route modules |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture, data flow, caching, circuit breakers |
+| [COINGECKO_RATE_LIMITING.md](docs/COINGECKO_RATE_LIMITING.md) | CoinGecko API rate limiting strategy and optimization |
+| [CONFIGURATION.md](docs/CONFIGURATION.md) | All environment variables, API keys, secrets management |
+| [DATABASE.md](docs/DATABASE.md) | PostgreSQL schema (Drizzle ORM) and BigQuery table definitions |
+| [DATA_PIPELINE.md](docs/DATA_PIPELINE.md) | Ingestion workers, Pub/Sub tiers, scheduling |
+| [DATA_SOURCES.md](docs/DATA_SOURCES.md) | 37+ upstream data source adapters and their capabilities |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, Cloud Run, Kubernetes deployment guides |
+| [DEVELOPER_WORKFLOW.md](docs/DEVELOPER_WORKFLOW.md) | Day-to-day development commands and workflows |
+| [INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) | Terraform, GCP resources, K8s manifests, CI/CD pipelines |
+| [ML_TRAINING.md](docs/ML_TRAINING.md) | Model fine-tuning (Gemini, Llama, Mistral), GPU training, vLLM inference |
+| [PACKAGES.md](docs/PACKAGES.md) | All 8 packages — agent-runtime, MCP servers, market-data, sweep, ucai |
+| [PERFORMANCE.md](docs/PERFORMANCE.md) | Benchmarks, optimization techniques, caching strategies |
+| [REPOSITORY_GUIDE.md](docs/REPOSITORY_GUIDE.md) | Full repository structure walkthrough |
+| [SELF_HOSTING.md](docs/SELF_HOSTING.md) | Complete self-hosting guide with data migration |
+| [TELEGRAM_BOT.md](docs/TELEGRAM_BOT.md) | Sect Bot — Telegram bot commands, features, database |
+| [TESTING.md](docs/TESTING.md) | Test strategy, coverage, unit/integration/e2e/fuzz/load tests |
+| [X402_PAYMENTS.md](docs/X402_PAYMENTS.md) | x402 micropayment protocol integration |
 
 ---
 
