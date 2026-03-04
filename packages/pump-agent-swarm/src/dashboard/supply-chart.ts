@@ -299,6 +299,11 @@ export class SupplyChart {
       curveAddress,
     );
 
+    // Fill in percent for each holder now that we have totalSupply
+    for (const holder of holderEntries) {
+      holder.percent = totalSupply > 0n ? this.toPercent(holder.tokens, totalSupply) : 0;
+    }
+
     // Sort by balance descending
     holderEntries.sort((a, b) => {
       if (b.tokens > a.tokens) return 1;

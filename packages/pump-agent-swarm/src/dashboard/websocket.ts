@@ -16,6 +16,24 @@ import type { SwarmEventBus } from '../infra/event-bus.js';
 import { SwarmLogger } from '../infra/logger.js';
 import type { SwarmEvent } from '../types.js';
 
+// ─── WebSocket Abstraction ────────────────────────────────────
+
+/**
+ * Minimal WebSocket interface — accepts Node.js global WebSocket,
+ * `ws` package instances, or Hono WebSocket objects.
+ */
+export interface IWebSocket {
+  readonly readyState: number;
+  send(data: string): void;
+  close(code?: number, reason?: string): void;
+  addEventListener(type: 'message', listener: (event: { data: unknown }) => void): void;
+  addEventListener(type: 'close', listener: () => void): void;
+  addEventListener(type: 'error', listener: () => void): void;
+}
+
+/** WebSocket readyState constants (mirrors the W3C spec) */
+const WS_OPEN = 1;
+
 // ─── Types ────────────────────────────────────────────────────
 
 /** Event types forwarded to dashboard clients */
@@ -110,26 +128,26 @@ const DEFAULT_CONFIG: WebSocketConfig = {
 /** Number of missed pings before a client is considered stale */
 const MAX_MISSED_PINGS = 2;
 
-/** Sensitive payload keys stripped before forwarding to clients */
+/** Sensitive payload keys stripped before forwarding to clients (all lowercase for comparison) */
 const SENSITIVE_KEYS = new Set([
-  'privateKey',
-  'secretKey',
+  'privatekey',
+  'secretkey',
   'mnemonic',
   'seed',
   'keypair',
-  'x402PrivateKey',
+  'x402privatekey',
   'password',
   'secret',
   'token',
-  'apiKey',
-  'apiSecret',
+  'apikey',
+  'apisecret',
 ]);
 
 // ─── Internal Client Representation ───────────────────────────
 
 interface ConnectedClient {
   id: string;
-  ws: WebSocket;
+  ws: IWebSocket;
   connectedAt: number;
   lastPing: number;
   subscriptions: string[];
@@ -176,7 +194,7 @@ export class DashboardWebSocket {
    * Assigns a client ID, registers the connection, wires up event handlers,
    * and sends the current swarm status as the initial message.
    */
-  handleUpgrade(ws: WebSocket): void {
+  handleUpgrade(ws: IWebSocket): void {
     if (this.stopped) {
       ws.close(1013, 'Server is shutting down');
       return;
@@ -214,7 +232,7 @@ export class DashboardWebSocket {
     });
 
     // Wire up WebSocket event handlers
-    ws.addEventListener('message', (event: MessageEvent) => {
+    ws.addEventListener('message', (event: { data: unknown }) => {
       this.handleClientMessage(client, event);
     });
 
@@ -446,14 +464,16 @@ export class DashboardWebSocket {
    */
   private handleClientMessage(
     client: ConnectedClient,
-    event: MessageEvent,
+    event: { data: unknown },
   ): void {
     let parsed: ClientMessage;
     try {
       const raw =
         typeof event.data === 'string'
           ? event.data
-          : new TextDecoder().decode(event.data as ArrayBuffer);
+          : event.data instanceof ArrayBuffer
+            ? new TextDecoder().decode(event.data)
+            : String(event.data);
       parsed = JSON.parse(raw) as ClientMessage;
     } catch {
       this.logger.warn('Invalid message from client', {
@@ -683,7 +703,7 @@ export class DashboardWebSocket {
    */
   private sendRaw(client: ConnectedClient, payload: string): boolean {
     try {
-      if (client.ws.readyState !== WebSocket.OPEN) {
+      if (client.ws.readyState !== WS_OPEN) {
         return false;
       }
       client.ws.send(payload);
