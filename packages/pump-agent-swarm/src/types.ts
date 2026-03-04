@@ -303,13 +303,19 @@ export interface RpcEndpoint {
   /** Whether this endpoint supports Jito bundles */
   supportsJito: boolean;
   /** Current health status */
-  healthy: boolean;
+  healthy?: boolean;
   /** Average latency in ms (rolling) */
-  avgLatencyMs: number;
+  avgLatencyMs?: number;
+  /** Rolling latency in ms (alias for avgLatencyMs) */
+  latencyMs?: number;
   /** Error count in current window */
-  errorCount: number;
+  errorCount?: number;
+  /** Consecutive health check failures */
+  consecutiveFailures?: number;
   /** Last successful request timestamp */
-  lastSuccessAt: number;
+  lastSuccessAt?: number;
+  /** Timestamp of last successful health check */
+  lastHealthCheck?: number;
   /** Provider name for logging */
   provider: string;
 }
@@ -318,15 +324,19 @@ export interface RpcPoolConfig {
   /** List of RPC endpoints to load-balance across */
   endpoints: RpcEndpoint[];
   /** Health check interval in ms (default: 30000) */
-  healthCheckIntervalMs: number;
+  healthCheckIntervalMs?: number;
   /** Max consecutive failures before marking unhealthy */
-  maxConsecutiveFailures: number;
+  maxConsecutiveFailures?: number;
   /** Request timeout in ms */
-  requestTimeoutMs: number;
+  requestTimeoutMs?: number;
   /** Retry count per request */
-  maxRetries: number;
+  maxRetries?: number;
   /** Whether to prefer lowest-latency endpoint */
-  preferLowLatency: boolean;
+  preferLowLatency?: boolean;
+  /** Connection commitment level (default: 'confirmed') */
+  commitment?: 'processed' | 'confirmed' | 'finalized';
+  /** Base delay for exponential backoff in ms (default: 500) */
+  retryBaseDelayMs?: number;
 }
 
 // ─── Event Bus Types ──────────────────────────────────────────

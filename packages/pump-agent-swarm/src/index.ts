@@ -47,6 +47,8 @@ export { SwarmCoordinator } from './swarm.js';
 // ─── Agents ───────────────────────────────────────────────────
 export { CreatorAgent } from './agents/creator-agent.js';
 export { TraderAgent } from './agents/trader-agent.js';
+export { SniperAgent, DEFAULT_SNIPER_CONFIG } from './agents/sniper-agent.js';
+export type { SniperConfig } from './agents/sniper-agent.js';
 export { AccumulatorAgent } from './agents/accumulator-agent.js';
 export type {
   AccumulatorConfig,
@@ -56,10 +58,26 @@ export type {
 export { VolumeAgent } from './agents/volume-agent.js';
 export type { VolumeConfig, VolumeStats } from './agents/volume-agent.js';
 
+// ─── Bundle / Jito ────────────────────────────────────────────
+export { JitoClient } from './bundle/jito-client.js';
+export type { JitoBundleResult, JitoBundleStatus } from './bundle/jito-client.js';
+
 // ─── Infrastructure ──────────────────────────────────────────
 export { RpcPool, DEFAULT_RPC_ENDPOINTS } from './infra/rpc-pool.js';
 export { SwarmLogger } from './infra/logger.js';
-export type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
+export { MetricsCollector, Counter, Gauge, Histogram, Rate } from './infra/metrics.js';
+export type { MetricSnapshot } from './infra/metrics.js';
+export Trading ──────────────────────────────────────────────────
+export { GasOptimizer, DEFAULT_GAS_CONFIG } from './trading/gas-optimizer.js';
+export type {
+  GasConfig,
+  FeeUrgency,
+  CongestionLevel,
+  FeeDataPoint,
+  TransactionCostEstimate,
+} from './trading/gas-optimizer.js';
+
+// ─── type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
 
 // ─── Analytics (x402) ─────────────────────────────────────────
 export { AnalyticsClient } from './analytics/x402-client.js';
@@ -72,20 +90,30 @@ export type {
   VolumeBucket,
   VolumePlan,
 } from './trading/volume-generator.js';
+export { TradeScheduler } from './trading/trade-scheduler.js';
+export type {
+  ScheduledOrder,
+  SchedulerConfig,
+  SchedulerStats,
+} from './trading/trade-scheduler.js';
 
 // ─── Wallet Management ────────────────────────────────────────
 export {
   createAgentWallet,
   restoreAgentWallet,
   generateWalletPool,
-  refreTrading ──────────────────────────────────────────────────
-export { WalletRotation } from './trading/wallet-rotation.js';
-export type { RotationConfig, WalletUsageStats } from './trading/wallet-rotation.js';
-
-// ─── shBalances,
+  refreshBalances,
   fundTraders,
   reclaimFunds,
   exportWalletKeys,
+  getPoolSummary,
+  WalletVault,
+} from './wallet-manager.js';
+export type { WalletVaultEvents } from './wallet-manager.js';
+
+// ─── Wallet Rotation ─────────────────────────────────────────
+export { WalletRotation } from './trading/wallet-rotation.js';
+export type { RotationConfig, WalletUsageStats } from './trading/wallet-rotation.js';
 
 // ─── Configuration ────────────────────────────────────────────
 export {
@@ -103,10 +131,21 @@ export {
   DEFAULT_AGENT_COUNTS,
 } from './config/index.js';
 export type { ValidationResult } from './config/index.js';
-  getPoolSummary,
-  WalletVault,
-} from './wallet-manager.js';
-export type { WalletVaultEvents } from './wallet-manager.js';
+
+// ─── Trading ──────────────────────────────────────────────────
+export {
+  PriceTrajectoryController,
+  calculateBuyOutput,
+  calculateSellOutput,
+  calculateSolForPriceTarget,
+  simulatePriceAfterTrade,
+} from './trading/price-trajectory.js';
+export type {
+  TrajectoryCurve,
+  PriceTrajectoryPlan,
+  PriceCheckpoint,
+  TrajectoryProgress,
+} from './trading/price-trajectory.js';
 
 // ─── Strategies ───────────────────────────────────────────────
 export {
