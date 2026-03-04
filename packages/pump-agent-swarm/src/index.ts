@@ -315,6 +315,21 @@ export type {
   RebalanceSuggestion,
 } from './trading/position-manager.js';
 
+// ─── P&L Tracking ─────────────────────────────────────────────
+export { PnLTracker } from './trading/pnl-tracker.js';
+export type {
+  TradeRecord,
+  AgentPnL,
+  SwarmPnL,
+  PnLDataPoint,
+  DrawdownInfo,
+  PnLSnapshot,
+} from './trading/pnl-tracker.js';
+
+// ─── Slippage Calculator ─────────────────────────────────────
+export { SlippageCalculator } from './trading/slippage-calculator.js';
+export type { SlippageEstimate } from './trading/slippage-calculator.js';
+
 // ─── Strategies ───────────────────────────────────────────────
 export {
   STRATEGY_ORGANIC,
