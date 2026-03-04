@@ -55,6 +55,12 @@ export type {
   AccumulationStrategy,
   AccumulationProgress,
 } from './agents/accumulator-agent.js';
+export { NarrativeAgent } from './agents/narrative-agent.js';
+export type {
+  NarrativeOptions,
+  PumpFunMetadata,
+  NarrativeEvaluation,
+} from './agents/narrative-agent.js';
 export { VolumeAgent } from './agents/volume-agent.js';
 export type { VolumeConfig, VolumeStats } from './agents/volume-agent.js';
 
@@ -76,8 +82,6 @@ export type {
   FeeDataPoint,
   TransactionCostEstimate,
 } from './trading/gas-optimizer.js';
-
-// ─── type { LogEntry, LogLevel, LoggerOptions } from './infra/logger.js';
 
 // ─── Analytics (x402) ─────────────────────────────────────────
 export { AnalyticsClient } from './analytics/x402-client.js';
