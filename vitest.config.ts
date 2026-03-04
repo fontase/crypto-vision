@@ -14,7 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts", "src/lib/__tests__/**/*.test.ts", "src/routes/__tests__/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "src/lib/__tests__/**/*.test.ts", "src/routes/__tests__/**/*.test.ts", "src/sources/__tests__/**/*.test.ts"],
     exclude: ["node_modules", "dist", "apps", "packages", "tests/e2e/**"],
     testTimeout: 10_000,
     hookTimeout: 10_000,
@@ -22,7 +22,7 @@ export default defineConfig({
     sequence: { shuffle: false },
     coverage: {
       provider: "v8",
-      include: ["src/lib/**/*.ts", "src/routes/**/*.ts"],
+      include: ["src/lib/**/*.ts", "src/routes/**/*.ts", "src/sources/**/*.ts"],
       exclude: ["**/*.test.ts", "**/__tests__/**"],
       thresholds: {
         statements: 50,
