@@ -124,6 +124,18 @@ export type {
   HealthCheckFn,
 } from './coordination/health-monitor.js';
 
+export { AuditLogger } from './coordination/audit-logger.js';
+export type {
+  AuditConfig,
+  AuditCategory,
+  AuditSeverity,
+  AuditEntry,
+  AuditFilter,
+  TradeAuditData,
+  TradeAuditSummary,
+  DecisionAuditData,
+} from './coordination/audit-logger.js';
+
 // ─── Trading ──────────────────────────────────────────────────
 export { GasOptimizer, DEFAULT_GAS_CONFIG } from './trading/gas-optimizer.js';
 export type {
