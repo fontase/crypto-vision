@@ -81,7 +81,9 @@ export type {
   RetryOptions,
   CircuitBreakerConfig,
 } from './infra/error-handler.js';
-export Trading ──────────────────────────────────────────────────
+
+// ───
+// ─── Trading ──────────────────────────────────────────────────
 export { GasOptimizer, DEFAULT_GAS_CONFIG } from './trading/gas-optimizer.js';
 export type {
   GasConfig,
