@@ -18,7 +18,7 @@
 import * as readline from 'node:readline';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Connection, Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import BN from 'bn.js';
 import bs58 from 'bs58';
 import { readFile } from 'node:fs/promises';
@@ -27,24 +27,17 @@ import { existsSync } from 'node:fs';
 import { SwarmCoordinator } from '../swarm.js';
 import { SwarmEventBus } from '../infra/event-bus.js';
 import { SwarmLogger } from '../infra/logger.js';
-import { RpcPool, DEFAULT_RPC_ENDPOINTS } from '../infra/rpc-pool.js';
+import { RpcPool } from '../infra/rpc-pool.js';
 import { HealthMonitor } from '../coordination/health-monitor.js';
-import { SwarmConfigManager } from '../coordination/swarm-config-manager.js';
 import { StrategyBrain, DEFAULT_STRATEGY_BRAIN_CONFIG } from '../intelligence/strategy-brain.js';
-import { WalletVault, generateWalletPool, reclaimFunds, getPoolSummary } from '../wallet-manager.js';
 import { PnLDashboard } from '../dashboard/pnl-dashboard.js';
 import {
   PRESET_STRATEGIES,
   STRATEGY_ORGANIC,
-  STRATEGY_VOLUME,
-  STRATEGY_GRADUATION,
-  STRATEGY_EXIT,
 } from '../strategies.js';
 import type {
   SwarmConfig,
   SwarmStatus,
-  SwarmEvent,
-  TradingStrategy,
   TradeResult,
   RpcEndpoint,
 } from '../types.js';
@@ -58,9 +51,6 @@ const RED = '\x1b[31m';
 const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';
 const CYAN = '\x1b[36m';
-const WHITE = '\x1b[37m';
-const BG_RED = '\x1b[41m';
-const BG_GREEN = '\x1b[42m';
 
 function green(text: string): string {
   return `${GREEN}${text}${RESET}`;
@@ -152,9 +142,9 @@ export class SwarmCLI {
   private coordinator: SwarmCoordinator | null = null;
   private eventBus: SwarmEventBus;
   private healthMonitor: HealthMonitor | null = null;
-  private strategyBrain: StrategyBrain | null = null;
+  private _strategyBrain: StrategyBrain | null = null;
   private pnlDashboard: PnLDashboard | null = null;
-  private logger: SwarmLogger;
+  private _logger: SwarmLogger;
   private rpcPool: RpcPool | null = null;
 
   private startedAt = 0;
@@ -163,13 +153,13 @@ export class SwarmCLI {
   private statusInterval: ReturnType<typeof setInterval> | null = null;
   private durationTimeout: ReturnType<typeof setTimeout> | null = null;
   private isShuttingDown = false;
-  private isRunning = false;
+  private _isRunning = false;
   private lastStatus: SwarmStatus | null = null;
 
   constructor() {
     this.sessionId = `swarm-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     this.eventBus = SwarmEventBus.getInstance();
-    this.logger = SwarmLogger.create('cli-runner', 'cli');
+    this._logger = SwarmLogger.create('cli-runner', 'cli');
 
     this.setupSignalHandlers();
   }
@@ -657,7 +647,7 @@ export class SwarmCLI {
     this.coordinator = new SwarmCoordinator(swarmConfig);
 
     // Forward coordinator events to trade log
-    this.coordinator.on('tradeExecuted', (result: TradeResult) => {
+    this.coordinator.on('trade:executed', (result: TradeResult) => {
       this.tradeLog.push({
         timestamp: Date.now(),
         agentName: result.order.traderId,
@@ -667,7 +657,7 @@ export class SwarmCLI {
       });
     });
 
-    this.coordinator.on('phaseChanged', (phase: string) => {
+    this.coordinator.on('phase:change', (phase: string) => {
       this.eventBus.emit(
         'phase:changed',
         'lifecycle',

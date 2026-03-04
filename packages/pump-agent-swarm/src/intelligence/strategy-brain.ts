@@ -17,7 +17,6 @@ import type {
   TradingStrategy,
 } from '../types.js';
 import {
-  PRESET_STRATEGIES,
   STRATEGY_EXIT,
   STRATEGY_GRADUATION,
   STRATEGY_ORGANIC,
@@ -755,7 +754,7 @@ suggestedAmount must not exceed ${Math.min(this.config.maxBudgetPerAction, marke
 
           // Don't retry on invalid request
           if (response.status === 400) {
-            this.logger.error('Bad request to OpenRouter', { body: errorText.slice(0, 200) });
+            this.logger.error(`Bad request to OpenRouter: ${errorText.slice(0, 200)}`);
             return null;
           }
 
@@ -992,7 +991,7 @@ suggestedAmount must not exceed ${Math.min(this.config.maxBudgetPerAction, marke
     };
   }
 
-  private makeFallbackBuyDecision(context: MarketContext): BuyDecision {
+  private makeFallbackBuyDecision(_context: MarketContext): BuyDecision {
     return {
       shouldBuy: false,
       confidence: 0.5,
@@ -1090,14 +1089,12 @@ suggestedAmount must not exceed ${Math.min(this.config.maxBudgetPerAction, marke
 
   private emitEvent(type: string, payload: Record<string, unknown>): void {
     try {
-      this.eventBus.emit({
-        id: crypto.randomUUID(),
+      this.eventBus.emit(
         type,
-        category: 'intelligence',
-        source: 'strategy-brain',
+        'intelligence' as import('../types.js').SwarmEventCategory,
+        'strategy-brain',
         payload,
-        timestamp: Date.now(),
-      });
+      );
     } catch {
       // Non-critical — don't let event emission failures break the brain
     }

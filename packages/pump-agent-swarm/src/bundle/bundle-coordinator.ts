@@ -54,7 +54,6 @@ import type {
   BundleParticipant,
   JitoBundleConfig,
   TokenNarrative,
-  BondingCurveState,
 } from '../types.js';
 import { WalletVault } from '../wallet-manager.js';
 import { SwarmEventBus } from '../infra/event-bus.js';
@@ -984,7 +983,7 @@ export class BundleCoordinator {
 
         // Build a buy using the predicted bonding curve state after creation
         const global = await sdk.fetchGlobal();
-        const buyIxs = await PUMP_SDK.buyInstructionsWithoutState({
+        const buyIxs = await PUMP_SDK.buyInstructions({
           global,
           mint: mintPubkey,
           bondingCurve,

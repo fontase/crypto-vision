@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Telegram Bot Entry Point
+ * Crypto Vision — Telegram Bot Entry Point
  *
  * Complete call-tracking Telegram bot built with grammY.
  * Handles all group commands, DM commands, and admin commands.
@@ -1089,7 +1089,7 @@ export function createBot(token: string): Bot {
   bot.command("start", async (ctx) => {
     if (ctx.chat?.type === "private") {
       await ctx.reply(
-        `🤖 <b>Welcome to Sect Bot!</b>\n\n` +
+        `🤖 <b>Welcome to Crypto Vision!</b>\n\n` +
         `I help you track calls and organize them in leaderboards.\n\n` +
         `<b>DM Commands:</b>\n` +
         `/rank — View your rank card\n` +

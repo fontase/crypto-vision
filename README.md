@@ -1,16 +1,41 @@
 # Crypto Vision
 
-> **The complete cryptocurrency intelligence API** — [cryptocurrency.cv](https://cryptocurrency.cv)
+> **The complete cryptocurrency intelligence platform** — [cryptocurrency.cv](https://cryptocurrency.cv)
 
-Crypto Vision is a high-performance TypeScript API that aggregates data from CoinGecko, DeFiLlama, DexScreener, RSS news feeds, and multiple LLM providers (Groq, Gemini, OpenAI, Anthropic, OpenRouter) into a single unified endpoint. Built on the [Hono](https://hono.dev) framework and deployable to any Node.js host or Google Cloud Run.
+Crypto Vision is a production-grade TypeScript monorepo that aggregates data from 30+ sources, powers 300+ API endpoints, runs a Telegram bot, orchestrates AI agent swarms, and provides real-time WebSocket feeds — all deployable via Docker, Kubernetes, or Google Cloud Run.
 
-Key capabilities:
+## What's Inside
 
-- **Market Data** — real-time coin prices, charts, OHLC candles, exchange rankings, categories, Fear & Greed Index, and DEX pair search.
-- **DeFi Analytics** — protocol TVL rankings, yield opportunities, stablecoin stats, DEX volumes, protocol fees/revenue, bridge volumes, and funding rounds.
-- **News Aggregation** — native RSS feed aggregation with search, category filtering, and trending topic detection.
-- **On-Chain Data** — multi-chain gas prices, Bitcoin fee estimates & network stats, token lookups by contract address, and DeFiLlama token pricing.
-- **AI Intelligence** — LLM-powered sentiment analysis, daily market digests, trading signal generation, and free-form Q&A enriched with live market context.
+| Layer | Description |
+|---|---|
+| **Root API** (`src/`) | Hono v4 service — market data, DeFi, news, on-chain, AI, search, analytics, WebSocket |
+| **Dashboard** (`apps/dashboard/`) | Next.js 16 + React 19 — real-time market data, DeFi analytics, portfolio tracking |
+| **News** (`apps/news/`) | Next.js 16 — crypto news aggregator with AI analysis and 12+ RSS sources |
+| **Video** (`apps/video/`) | Remotion v4 — programmatic video generation |
+| **Pump Agent Swarm** (`packages/pump-agent-swarm/`) | Pump.fun agent swarm: creator/trader agents, intelligence, coordination |
+| **MCP Servers** (`packages/mcp-server/`, `binance-mcp/`, `bnbchain-mcp/`) | Model Context Protocol servers for AI tool calling |
+| **Market Data** (`packages/market-data/`) | Edge-compatible market data client (CoinGecko, DeFiLlama) |
+| **Agent Runtime** (`packages/agent-runtime/`) | ERC-8004 agent runtime with A2A messaging + x402 micropayments |
+| **Sweep** (`packages/sweep/`) | Multi-chain dust sweeper with DeFi routing |
+| **Telegram Bot** (`src/bot/`) | Grammy-based bot — calls, leaderboards, premium, insider alerts |
+| **Infrastructure** (`infra/`) | Terraform, Kubernetes manifests, Pub/Sub topics, scheduler jobs |
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | System architecture, middleware stack, data flow |
+| [API Reference](docs/API_REFERENCE.md) | All 300+ endpoints with parameters and examples |
+| [Configuration](docs/CONFIGURATION.md) | Environment variables, API keys, secrets |
+| [Database](docs/DATABASE.md) | PostgreSQL schema, BigQuery tables, materialized views |
+| [Packages](docs/PACKAGES.md) | Deep-dive into each package and app |
+| [Infrastructure](docs/INFRASTRUCTURE.md) | Docker, Kubernetes, Terraform, CI/CD |
+| [Testing](docs/TESTING.md) | Test strategy, running tests, coverage |
+| [Agents](docs/AGENTS.md) | 58 AI agents, localization, prompt system |
+| [Performance](docs/PERFORMANCE.md) | WebSocket throttling, caching, optimization |
+| [Self-Hosting](docs/SELF_HOSTING.md) | Run the full stack without GCP |
+| [Repository Guide](docs/REPOSITORY_GUIDE.md) | Full repo structure and project relationships |
+| [Developer Workflow](docs/DEVELOPER_WORKFLOW.md) | Day-to-day dev commands and workflows |
 
 ---
 
@@ -19,223 +44,154 @@ Key capabilities:
 ### Prerequisites
 
 - **Node.js ≥ 22**
-- **Redis** (optional — an in-memory LRU cache is used when Redis is absent)
+- **Redis 7** (optional — an in-memory LRU cache is used when Redis is absent)
+- **PostgreSQL 16** (required for the Telegram bot; optional otherwise)
 
 ### Install & Run
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/nirholas/crypto-vision.git
 cd crypto-vision
-
-# 2. Install dependencies
 npm install
-
-# 3. Create your environment file
-cp .env.example .env
-# Edit .env and add your API keys (see Environment Variables below)
-
-# 4. Start the dev server (hot-reload via tsx)
-npm run dev
+cp .env.example .env   # edit with your API keys
+npm run dev             # http://localhost:8080
 ```
 
-The server starts on **http://localhost:8080** by default.
-
-### Docker
+### Docker Compose (full stack)
 
 ```bash
-npm run docker:build    # docker build -t crypto-vision .
-npm run docker:run      # docker run -p 8080:8080 --env-file .env crypto-vision
+docker compose up -d    # API + Redis + PostgreSQL + scheduler
 ```
 
-### Other Scripts
+### Docker (API only)
+
+```bash
+npm run docker:build
+npm run docker:run
+```
+
+---
+
+## Scripts
 
 | Script | Description |
 |---|---|
-| `npm run dev` | Start dev server with hot reload |
-| `npm run build` | Compile TypeScript + resolve path aliases |
-| `npm start` | Run the compiled production build |
-| `npm run lint` | Lint source files with ESLint |
+| `npm run dev` | Start dev server with hot reload (tsx watch) |
+| `npm run build` | Compile TypeScript |
+| `npm start` | Run compiled production build |
+| `npm run lint` | Lint with ESLint |
 | `npm run typecheck` | Type-check without emitting |
-| `npm test` | Run tests with Vitest |
-| `npm run test:watch` | Run tests in watch mode |
+| `npm test` | Run unit tests (Vitest) |
+| `npm run test:watch` | Tests in watch mode |
+| `npm run test:e2e` | End-to-end tests |
+| `npm run training:generate` | Generate LLM training data from BigQuery |
+| `npm run training:finetune` | Fine-tune Gemini on Vertex AI |
+| `npm run training:eval` | Evaluate model performance |
+| `npm run training:prepare` | Prepare data for open-source model training |
+| `npm run export` | Export all data (BigQuery → GCS) |
+| `npm run export:import-pg` | Import Parquet exports to PostgreSQL |
 
 ---
 
-## Environment Variables
+## API Surface (Summary)
 
-Copy `.env.example` to `.env` and configure as needed. All variables are **optional** unless noted.
+The full OpenAPI 3.1 spec is at [`openapi.yaml`](openapi.yaml). Live directory at `GET /api`.
 
-### Server
+| Category | Prefix | Endpoints | Examples |
+|---|---|---|---|
+| Meta | `/` | 5 | `/health`, `/metrics`, `/api/ready` |
+| Market | `/api/` | 12 | `/api/coins`, `/api/price`, `/api/chart/:id`, `/api/ohlc/:id` |
+| DeFi | `/api/defi/` | 10 | `/api/defi/protocols`, `/api/defi/yields`, `/api/defi/bridges` |
+| News | `/api/news/` | 7 | `/api/news`, `/api/news/search`, `/api/news/breaking` |
+| On-Chain | `/api/onchain/` | 5 | `/api/onchain/gas`, `/api/onchain/token/:address` |
+| AI | `/api/ai/` | 4 | `/api/ai/sentiment/:coin`, `/api/ai/digest`, `/api/ai/ask` |
+| Search | `/api/search/` | 4 | `/api/search/smart`, `/api/search/nlq`, `/api/search/suggest` |
+| Bitcoin | `/api/bitcoin/` | 5+ | Network stats, lightning, UTXO, mempool |
+| Analytics | `/api/analytics/` | 5+ | Correlations, market cycles, portfolio analysis |
+| Derivatives | `/api/derivatives/` | 5+ | Funding rates, open interest, liquidations |
+| CEX | `/api/cex/` | 5+ | Exchange data, order books, volumes |
+| DEX | `/api/dex/` | 5+ | DEX pairs, volume, liquidity |
+| Solana | `/api/solana/` | 5+ | Solana-specific data, programs, validators |
+| Whales | `/api/whales/` | 3+ | Whale transactions, accumulation |
+| Staking | `/api/staking/` | 3+ | Staking yields, validators |
+| NFT | `/api/nft/` | 3+ | NFT collections, sales, floor prices |
+| Governance | `/api/governance/` | 3+ | DAO proposals, voting |
+| Macro | `/api/macro/` | 3+ | Traditional finance correlation |
+| Agents | `/api/agents/` | 3+ | Agent orchestration, discovery |
+| WebSocket | `/ws/` | 4 | `/ws/prices`, `/ws/bitcoin`, `/ws/trades`, `/ws/status` |
 
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | HTTP server port |
-| `NODE_ENV` | `development` | `development` or `production` |
-| `LOG_LEVEL` | `info` | Pino log level (`trace` / `debug` / `info` / `warn` / `error` / `fatal`) |
-| `CORS_ORIGINS` | *(all in dev)* | Comma-separated allowed origins (production only) |
+See [API Reference](docs/API_REFERENCE.md) for the complete list with parameters.
 
-### Cache
+---
 
-| Variable | Default | Description |
-|---|---|---|
-| `REDIS_URL` | — | Redis connection URL. In-memory LRU used when absent |
+## Data Sources (30+)
 
-### Queue / Concurrency
-
-| Variable | Default | Description |
-|---|---|---|
-| `AI_CONCURRENCY` | `10` | Max concurrent AI requests |
-| `AI_MAX_QUEUE` | `500` | Max queued AI requests before 503 |
-| `HEAVY_FETCH_CONCURRENCY` | `20` | Max concurrent upstream fetches |
-
-### Market Data APIs
-
-| Variable | Default | Description |
-|---|---|---|
-| `COINGECKO_API_KEY` | — | CoinGecko API key for higher rate limits |
-| `COINGECKO_PRO` | `false` | Use CoinGecko Pro base URL |
-| `CRYPTOCOMPARE_API_KEY` | — | CryptoCompare key (not yet wired) |
-
-### News
-
-| Variable | Default | Description |
-|---|---|---|
-| `NEWS_API_URL` | — | Upstream news service base URL |
-| `NEWSAPI_API_KEY` | — | NewsAPI.org key (not yet wired) |
-| `CRYPTOPANIC_API_KEY` | — | CryptoPanic key (not yet wired) |
-
-### AI Providers
-
-At least one key is required for `/api/ai/*` endpoints. Providers are tried in order: **Groq → Gemini → OpenAI → Anthropic → OpenRouter**.
-
-| Variable | Description |
+| Source | Category |
 |---|---|
-| `GROQ_API_KEY` | Groq — fastest inference, tried first |
-| `GEMINI_API_KEY` | Google Gemini |
-| `OPENAI_API_KEY` | OpenAI |
-| `ANTHROPIC_API_KEY` | Anthropic |
-| `OPENROUTER_API_KEY` | OpenRouter multi-model gateway (tried last) |
-
-### Infrastructure (Production / GCP)
-
-| Variable | Default | Description |
-|---|---|---|
-| `GCP_PROJECT_ID` | — | Google Cloud project ID |
-| `GCP_REGION` | `us-central1` | Google Cloud region |
-
----
-
-## API Endpoints
-
-The full [OpenAPI 3.1 specification](openapi.yaml) is available at the project root.
-
-A live endpoint directory is also served at `GET /api`.
-
-### Meta
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/` | API info and links |
-| GET | `/health` | Health check, uptime, cache stats |
-| GET | `/api` | Endpoint directory |
-
-### Market Data (`/api/`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/coins` | Top coins by market cap (paginated) |
-| GET | `/api/coin/:id` | Coin detail including description, links, and market data |
-| GET | `/api/price` | Simple price lookup (`?ids=bitcoin,ethereum&vs_currencies=usd`) |
-| GET | `/api/trending` | Trending coins |
-| GET | `/api/global` | Global market statistics |
-| GET | `/api/search` | Search coins by name or symbol (`?q=...`) |
-| GET | `/api/chart/:id` | Price/market-cap/volume chart data (`?days=7&interval=daily`) |
-| GET | `/api/ohlc/:id` | OHLC candlestick data (`?days=7`) |
-| GET | `/api/exchanges` | Exchange rankings by trust score (paginated) |
-| GET | `/api/categories` | Coin categories with market cap and volume |
-| GET | `/api/fear-greed` | Crypto Fear & Greed Index (`?limit=1`) |
-| GET | `/api/dex/search` | DEX pair search via DexScreener (`?q=...`) |
-
-### DeFi (`/api/defi/`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/defi/protocols` | Top DeFi protocols by TVL (`?limit=100&chain=...&category=...`) |
-| GET | `/api/defi/protocol/:slug` | Protocol detail with per-chain TVL and 90-day history |
-| GET | `/api/defi/chains` | All chains ranked by TVL |
-| GET | `/api/defi/chain/:name` | Chain TVL history (last 365 days) |
-| GET | `/api/defi/yields` | Yield pools sorted by APY (`?min_tvl=...&min_apy=...&stablecoin=true`) |
-| GET | `/api/defi/stablecoins` | Stablecoins sorted by circulating supply |
-| GET | `/api/defi/dex-volumes` | DEX volume rankings (top 50) |
-| GET | `/api/defi/fees` | Protocol fee/revenue rankings (top 50) |
-| GET | `/api/defi/bridges` | Cross-chain bridge volumes |
-| GET | `/api/defi/raises` | Recent crypto funding rounds (`?limit=50`) |
-
-### News (`/api/news/`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/news` | Latest news (`?limit=20&source=...&category=...&page=1`) |
-| GET | `/api/news/search` | Search news (`?q=...&limit=20`) |
-| GET | `/api/news/bitcoin` | Bitcoin-specific news |
-| GET | `/api/news/defi` | DeFi-specific news |
-| GET | `/api/news/breaking` | Breaking news (last 2 hours) |
-| GET | `/api/news/trending` | Trending topics |
-| GET | `/api/news/sources` | Available RSS feed sources |
-
-### On-Chain (`/api/onchain/`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/onchain/gas` | Multi-chain gas prices (Bitcoin; EVM planned) |
-| GET | `/api/onchain/bitcoin/fees` | Bitcoin fee estimates (sat/vB) |
-| GET | `/api/onchain/bitcoin/stats` | Bitcoin network stats (hashrate) |
-| GET | `/api/onchain/token/:address` | Token info + DEX pairs by contract address |
-| GET | `/api/onchain/prices` | Token prices by chain:address (`?coins=ethereum:0x...`) |
-
-### AI Intelligence (`/api/ai/`)
-
-Requires at least one LLM API key configured.
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/ai/sentiment/:coin` | AI sentiment analysis for a coin (cached 5 min) |
-| GET | `/api/ai/digest` | AI daily market digest (cached 15 min) |
-| GET | `/api/ai/signals` | AI trading signals (cached 10 min) |
-| POST | `/api/ai/ask` | Free-form crypto Q&A (body: `{ "question": "...", "context?": "..." }`) |
+| CoinGecko | Market data, coin details, charts, trending, exchanges |
+| DeFiLlama | DeFi protocols, TVL, yields, stablecoins, DEX volumes, fees, bridges, raises |
+| DexScreener / GeckoTerminal | DEX pair search and token lookups |
+| Alternative.me | Fear & Greed Index |
+| mempool.space | Bitcoin fees and network stats |
+| Binance / Bybit / OKX / dYdX / Hyperliquid | CEX data, derivatives, perps |
+| CoinGlass | Derivatives, open interest, liquidations |
+| CryptoCompare | Social metrics, historical data |
+| Messari | Research, protocol metrics |
+| Token Terminal | Protocol revenue and earnings |
+| CoinMarketCal | Crypto calendar events |
+| Etherscan / Blockchair | On-chain data, whale tracking |
+| L2Beat | Layer 2 metrics |
+| DePIN Scan | DePIN protocol data |
+| Snapshot | Governance proposals |
+| Reservoir | NFT data |
+| Jupiter | Solana DEX aggregator, SOL price |
+| Pump.fun | Memecoin launch activity |
+| RSS Feeds (12+) | Crypto news aggregation |
+| Groq / Gemini / OpenAI / Anthropic / OpenRouter | AI analysis (cascading fallback) |
 
 ---
 
 ## Tech Stack
 
-- [Hono](https://hono.dev) — ultra-fast HTTP framework
-- TypeScript (strict mode)
-- [ioredis](https://github.com/redis/ioredis) — Redis caching (optional)
-- [pino](https://getpino.io) — structured JSON logging
-- [zod](https://zod.dev) — runtime validation
-- [undici](https://undici.nodejs.org) — HTTP client
-- [Vitest](https://vitest.dev) — testing framework
-
-## Data Sources
-
-| Source | Used For |
+| Component | Technology |
 |---|---|
-| [CoinGecko](https://www.coingecko.com/en/api) | Market data, coin details, charts, trending |
-| [DeFiLlama](https://defillama.com/docs/api) | DeFi protocols, yields, stablecoins, DEX volumes, fees, bridges, raises, token prices |
-| [DexScreener](https://docs.dexscreener.com) | DEX pair search, token lookups |
-| [Alternative.me](https://alternative.me/crypto/fear-and-greed-index/) | Fear & Greed Index |
-| [mempool.space](https://mempool.space/docs/api) | Bitcoin fees and network stats |
-| RSS Feeds | Crypto news aggregation |
-| Groq / Gemini / OpenAI / Anthropic / OpenRouter | AI-powered analysis |
+| Runtime | Node.js 22, TypeScript 5.7+ (strict mode) |
+| HTTP | Hono v4 + @hono/node-server + WebSocket |
+| Database | PostgreSQL 16 (Drizzle ORM), BigQuery |
+| Cache | Redis 7 (ioredis) with LRU fallback |
+| AI | Multi-provider LLM (Groq→Gemini→OpenAI→Anthropic→OpenRouter) |
+| ML Training | CUDA 12.4, PyTorch 2.4, Unsloth, LoRA, vLLM |
+| Telegram | Grammy v1 |
+| Validation | Zod |
+| Logging | Pino (structured JSON) |
+| Metrics | Prometheus (prom-client) |
+| Testing | Vitest (unit + e2e), k6 (load) |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4 |
+| Video | Remotion v4 |
+| Blockchain | @solana/web3.js, @coral-xyz/anchor, ethers v6, viem v2 |
+| Cloud | GCP (Cloud Run, BigQuery, Pub/Sub, Vertex AI, Memorystore) |
+| IaC | Terraform, Kubernetes (Kustomize), Docker Compose |
+| CI/CD | Google Cloud Build (canary deploys) |
+
+---
+
+## Deployment Options
+
+| Method | Complexity | Cost |
+|---|---|---|
+| `docker compose up` | Minimal | ~$43/mo (Hetzner) |
+| Kubernetes (k3s/GKE) | Medium | ~$50–150/mo |
+| GCP Cloud Run | Production | ~$305/mo |
+| Bare metal | Advanced | See [Self-Hosting](docs/SELF_HOSTING.md) |
+
+---
 
 ## Rate Limiting
 
-The API enforces a default rate limit of **200 requests per minute per IP** on all `/api/*` routes.
+Default: **200 requests per minute per IP** on all `/api/*` routes. Redis-backed when available, in-memory otherwise.
 
-## Upstream References
+---
 
-This project was ported from and informed by the following repositories. They are **reference material used during development, no longer vendored**:
+## License
 
-- <https://github.com/agentix-labs/agenti>
-- <https://github.com/nirholas/free-crypto-news>
+MIT

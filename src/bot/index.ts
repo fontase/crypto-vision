@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Main Entry Point
+ * Crypto Vision — Main Entry Point
  *
  * Initializes and starts the Telegram bot, background workers,
  * and registers webhook or long-polling mode.
@@ -27,7 +27,7 @@ let restartAttempts = 0;
 let restartTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
- * Start the Sect Bot — connects to Telegram, starts workers.
+ * Start the Crypto Vision — connects to Telegram, starts workers.
  */
 export async function startBot(): Promise<Bot> {
   const token = process.env["TELEGRAM_BOT_TOKEN"];
@@ -35,7 +35,7 @@ export async function startBot(): Promise<Bot> {
     throw new Error("TELEGRAM_BOT_TOKEN environment variable is required");
   }
 
-  log.info("Starting Sect Bot...");
+  log.info("Starting Crypto Vision...");
 
   const bot = createBot(token);
   botInstance = bot;
@@ -110,7 +110,7 @@ export async function startBot(): Promise<Bot> {
 
   // Set bot commands menu
   await bot.api.setMyCommands([
-    { command: "start", description: "Get started with Sect Bot" },
+    { command: "start", description: "Get started with Crypto Vision" },
     { command: "leaderboard", description: "View group leaderboards" },
     { command: "last", description: "Show recent calls" },
     { command: "pnl", description: "Generate PNL card" },
@@ -149,7 +149,7 @@ function startPolling(bot: Bot): void {
   bot.start({
     onStart: (botInfo) => {
       restartAttempts = 0; // reset on successful start
-      log.info({ username: botInfo.username }, "Sect Bot polling started");
+      log.info({ username: botInfo.username }, "Crypto Vision polling started");
     },
     allowed_updates: [
       "message",
@@ -218,7 +218,7 @@ function handlePollingDeath(bot: Bot): void {
  * Stop the bot gracefully.
  */
 export async function stopBot(): Promise<void> {
-  log.info("Stopping Sect Bot...");
+  log.info("Stopping Crypto Vision...");
 
   // Cancel any pending restart timer
   if (restartTimer) {
@@ -236,7 +236,7 @@ export async function stopBot(): Promise<void> {
   }
 
   await closeDb();
-  log.info("Sect Bot stopped");
+  log.info("Crypto Vision stopped");
 }
 
 /**

@@ -475,7 +475,7 @@ export class ScannerAgent extends EventEmitter<ScannerAgentEvents> {
         .inc(newTokens.length);
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      this.logger.error('Scan pass failed', { scanId, error: error.message });
+      this.logger.error(`Scan pass failed (scanId: ${scanId})`, error);
       this.emit('scanner:error', error);
       this.metrics
         .counter('scanner.scans.errors')
@@ -639,9 +639,7 @@ export class ScannerAgent extends EventEmitter<ScannerAgentEvents> {
       await this.scanOnce();
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      this.logger.error('Scan loop iteration error', {
-        error: error.message,
-      });
+      this.logger.error('Scan loop iteration error', error);
     }
   }
 

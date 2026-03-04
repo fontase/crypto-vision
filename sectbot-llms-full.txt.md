@@ -1,8 +1,8 @@
-# Welcome to Sect Bot
+# Welcome to Crypto Vision
 
 <figure><img src="https://3752282437-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtWeyRlcGydGO0ZSRsey0%2Fuploads%2F9XLg5SQO2iufKwL07mCy%2Ftwitter_banner.png?alt=media&#x26;token=9dc6763e-5398-41c7-830c-d65a87100672" alt=""><figcaption></figcaption></figure>
 
-I am **SECT BOT** — your go-to tool for Telegram groups. I help you track calls and organize them in leaderboards.&#x20;
+I am **Crypto Vision** — your go-to tool for Telegram groups. I help you track calls and organize them in leaderboards.&#x20;
 
 ## <mark style="color:green;">**Here's what you can do:**</mark>
 
@@ -21,13 +21,13 @@ I am **SECT BOT** — your go-to tool for Telegram groups. I help you track call
 
 * [**Insider Alerts**](https://sectbot.gitbook.io/docs/ads-and-subscriptions/insider-alerts)
 * [**Advertisement**](https://sectbot.gitbook.io/docs/ads-and-subscriptions/sect-bot-ads)
-* [**Sect Bot Premium**](https://sectbot.gitbook.io/docs/ads-and-subscriptions/sect-bot-premium)
+* [**Crypto Vision Premium**](https://sectbot.gitbook.io/docs/ads-and-subscriptions/sect-bot-premium)
 
 ## Easy Access
 
 <details>
 
-<summary><a href="introduction/add-sect-bot"><mark style="color:blue;"><strong>➕</strong></mark> <mark style="color:green;"><strong>Add Sect Bot</strong></mark></a></summary>
+<summary><a href="introduction/add-sect-bot"><mark style="color:blue;"><strong>➕</strong></mark> <mark style="color:green;"><strong>Add Crypto Vision</strong></mark></a></summary>
 
 </details>
 
@@ -44,19 +44,19 @@ I am **SECT BOT** — your go-to tool for Telegram groups. I help you track call
 </details>
 
 
-# Add Sect Bot
+# Add Crypto Vision
 
-Admin rights are necessary for Sect bot to work in your group
+Admin rights are necessary for Crypto Vision to work in your group
 
-## - [<mark style="color:green;">Click here to add Sect Bot to your group</mark> ](https://t.me/sectleaderboardbot?startgroup=botstart)-
+## - [<mark style="color:green;">Click here to add Crypto Vision to your group</mark> ](https://t.me/sectleaderboardbot?startgroup=botstart)-
 
 ## <mark style="color:green;">⚙️</mark> Group Settings
 
-After adding SECT BOT to your group, explore the settings to configure it properly.&#x20;
+After adding Crypto Vision to your group, explore the settings to configure it properly.&#x20;
 
 ## <mark style="color:green;">🚫</mark>Discord
 
-Discord refused to grant message content intent permission, making SECT BOT non-functional. As a result, we’ve removed the Discord bot.
+Discord refused to grant message content intent permission, making Crypto Vision non-functional. As a result, we’ve removed the Discord bot.
 
 
 # Links
@@ -71,7 +71,7 @@ Discord refused to grant message content intent permission, making SECT BOT non-
 * **Website**: [<mark style="color:green;">https://sectbot.com/</mark>](https://sectbot.com/)&#x20;
 * **dApp**: [<mark style="color:green;">https://sectbot.com/dapp</mark>](https://sectbot.com/dapp)
 * **Staking**: [<mark style="color:green;">https://sectbot.com/staking</mark>](https://sectbot.com/staking)
-* [<mark style="color:green;">**Sect Bot Chart**</mark>](https://discord.com/api/oauth2/authorize?client_id=1195726780313641071\&permissions=412317866052\&scope=bot)
+* [<mark style="color:green;">**Crypto Vision Chart**</mark>](https://discord.com/api/oauth2/authorize?client_id=1195726780313641071\&permissions=412317866052\&scope=bot)
 
 ***
 
@@ -85,7 +85,7 @@ Discord refused to grant message content intent permission, making SECT BOT non-
 
 ### **1. Information We Collect**
 
-1.1. **User Data**: When you interact with SECT BOT, we may collect information such as your username, user ID, and any other data you provide.
+1.1. **User Data**: When you interact with Crypto Vision, we may collect information such as your username, user ID, and any other data you provide.
 
 1.2. **Usage Data**: We collect data on how you interact with the Bot, including commands used, frequency, and other related metrics.
 
@@ -140,7 +140,7 @@ If you have any questions or concerns about this Privacy Policy, please contact 
 
 ### **1. Scope**
 
-By using SECT BOT ("the Bot") on supported platforms, you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, you may not use the Bot.
+By using Crypto Vision ("the Bot") on supported platforms, you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, you may not use the Bot.
 
 ### **2. User Responsibilities and Conduct**
 
@@ -176,7 +176,7 @@ By using SECT BOT ("the Bot") on supported platforms, you agree to be bound by t
 
 5.3. Users must comply with all implemented rate limits. Failure to respect these limits or attempts to circumvent them may result in temporary or permanent blacklisting from using the Bot.
 
-5.4. The use of bots, automated scripts, or any other means to interact with SECT BOT in an automated way is prohibited.
+5.4. The use of bots, automated scripts, or any other means to interact with Crypto Vision in an automated way is prohibited.
 
 ### **6. Disclaimers and Limitations of Liability**
 
@@ -188,7 +188,7 @@ By using SECT BOT ("the Bot") on supported platforms, you agree to be bound by t
 
 6.4. You acknowledge and accept all risks associated with using the Bot.
 
-6.5 Nothing provided by SECT BOT constitutes financial advice. All content, features, and advertisements are for informational purposes only. You should conduct your own research and consult with a qualified professional before making any financial or investment decisions. We are not responsible for any financial losses incurred from reliance on information provided by the Bot.
+6.5 Nothing provided by Crypto Vision constitutes financial advice. All content, features, and advertisements are for informational purposes only. You should conduct your own research and consult with a qualified professional before making any financial or investment decisions. We are not responsible for any financial losses incurred from reliance on information provided by the Bot.
 
 ### **7. Subscription Terms**
 
@@ -206,7 +206,7 @@ By using SECT BOT ("the Bot") on supported platforms, you agree to be bound by t
 
 8.2. Users are advised to conduct their own research before engaging with any advertised content.
 
-8.3. SECT BOT does not endorse or verify the legitimacy of any advertisements displayed through the Bot. Advertised content may include financial, trading, or investment-related promotions, but none of these should be considered financial advice. Users should perform their own due diligence before engaging with any advertised services or products.
+8.3. Crypto Vision does not endorse or verify the legitimacy of any advertisements displayed through the Bot. Advertised content may include financial, trading, or investment-related promotions, but none of these should be considered financial advice. Users should perform their own due diligence before engaging with any advertised services or products.
 
 
 # Commands
@@ -226,7 +226,7 @@ By using SECT BOT ("the Bot") on supported platforms, you agree to be bound by t
 
 # Leaderboards
 
-Track calls, rank users, and reshape your group dynamics with Sect Bot Leaderboards
+Track calls, rank users, and reshape your group dynamics with Crypto Vision Leaderboards
 
 ## 📊**Leaderboard Types**
 
@@ -271,7 +271,7 @@ User performance is measured through a point system that gives points for good c
 
 ## **📊 PNL Cards**
 
-Sect Bot designed PNL cards to make sharing and flexing your gains effortless.
+Crypto Vision designed PNL cards to make sharing and flexing your gains effortless.
 
 Each PNL card displays:
 
@@ -318,7 +318,7 @@ To **view your rank card**, simply type **/rank** in DM with the bot.
 
 ## Call Processing: Your Choice
 
-With Sect Bot, you decide how your calls get submitted—automatically or with a manual confirm button. Whether you want full automation or a hands-on approach we've got you covered.
+With Crypto Vision, you decide how your calls get submitted—automatically or with a manual confirm button. Whether you want full automation or a hands-on approach we've got you covered.
 
 You can set this up when adding the bot to your group or tweak it anytime with <mark style="color:red;">**/settings**</mark>
 
@@ -385,7 +385,7 @@ To check how the current round is going—and see which members are at risk of g
 
 # Call Channels
 
-SECT BOT **Call Channels** let you streamline your trading experience by filtering out the noise and focusing only on **calls**. With this feature, calls made in your group through Sect Bot will be **forwarded directly to a dedicated channel**, keeping everything organized and easy to track.
+Crypto Vision **Call Channels** let you streamline your trading experience by filtering out the noise and focusing only on **calls**. With this feature, calls made in your group through Crypto Vision will be **forwarded directly to a dedicated channel**, keeping everything organized and easy to track.
 
 ## **❓How It Works**
 
@@ -403,7 +403,7 @@ SECT BOT **Call Channels** let you streamline your trading experience by filteri
 
 ✔️ Choose who stays in your group and who only gets access to the calls. Turn it into a public or paid calls channel.
 
-SECT BOT Call Channels bring efficiency, organization, and automation to your trading strategy.
+Crypto Vision Call Channels bring efficiency, organization, and automation to your trading strategy.
 
 <figure><img src="https://3752282437-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtWeyRlcGydGO0ZSRsey0%2Fuploads%2FZjrQhjoGWnpmPcMLmxdz%2Fimage.png?alt=media&#x26;token=cf237677-ac8d-4037-a8e7-588f46809a6d" alt="" width="490"><figcaption></figcaption></figure>
 
@@ -412,7 +412,7 @@ SECT BOT Call Channels bring efficiency, organization, and automation to your tr
 
 ## **Referral System**
 
-Sect Bot lets you earn while using it with its **custom-built referral system**. It's simple to set up and rewards you directly for every purchase made through your link.
+Crypto Vision lets you earn while using it with its **custom-built referral system**. It's simple to set up and rewards you directly for every purchase made through your link.
 
 ## **❓How to Get Your Referral Link:**
 
@@ -421,7 +421,7 @@ Sect Bot lets you earn while using it with its **custom-built referral system**.
 3. Provide your **wallet address** for payouts.
 4. Wait for the **team’s approval**.
 
-Once approved, you’ll receive a **unique referral link**. Every time someone makes a purchase using your link, you **instantly earn 20% of the purchase**. No delays, no complicated steps—just a direct way to earn while using Sect Bot.
+Once approved, you’ll receive a **unique referral link**. Every time someone makes a purchase using your link, you **instantly earn 20% of the purchase**. No delays, no complicated steps—just a direct way to earn while using Crypto Vision.
 
 ## **❓Why Join the Referral System?**
 
@@ -434,7 +434,7 @@ Once approved, you’ll receive a **unique referral link**. Every time someone m
 
 # Languages
 
-Sect Bot supports multiple languages so you can use it without any hassle. The interface, search, and all features work in the following languages:
+Crypto Vision supports multiple languages so you can use it without any hassle. The interface, search, and all features work in the following languages:
 
 * **English**
 * **Chinese**
@@ -456,11 +456,11 @@ Here you'll find info about the features in our dapp.
 
 ## 💎**Gem Hunting**
 
-On the main page of our dApp, you can find all the calls made using Sect Bot. This feature allows you to track and analyze calls in real-time, view the callers and their win rates, and potentially discover your next investment opportunity.
+On the main page of our dApp, you can find all the calls made using Crypto Vision. This feature allows you to track and analyze calls in real-time, view the callers and their win rates, and potentially discover your next investment opportunity.
 
 **Find the next 100x at:** [**https://sectbot.com/dapp**](https://sectbot.com/dapp)
 
-While the **Sect Bot dApp** lets you track all calls in real-time, [**Sect Insider Alerts**](https://sectbot.gitbook.io/docs/sect-bot/broken-reference) takes it a step further. Using advanced algorithms, it filters out the **best** calls from the entire dataset, ensuring you only get **high-probability winners**. Plus, you can **customize your alerts**, choosing the type of calls you want to receive—taking **gem hunting** to the next level.
+While the **Crypto Vision dApp** lets you track all calls in real-time, [**Sect Insider Alerts**](https://sectbot.gitbook.io/docs/sect-bot/broken-reference) takes it a step further. Using advanced algorithms, it filters out the **best** calls from the entire dataset, ensuring you only get **high-probability winners**. Plus, you can **customize your alerts**, choosing the type of calls you want to receive—taking **gem hunting** to the next level.
 
 ## 🎨**Customize Your Profile**
 
@@ -481,24 +481,24 @@ Located in the top-right corner of the dApp, the search bar enables you to:
 
 ## 🏆**Contest Tab**
 
-The contest tab provides access to ongoing competitions hosted by Sect Bot. These competitions are designed to engage the community and reward top-performing callers. Stay updated for opportunities to win big prizes.
+The contest tab provides access to ongoing competitions hosted by Crypto Vision. These competitions are designed to engage the community and reward top-performing callers. Stay updated for opportunities to win big prizes.
 
 *Check the ongoing contests at:* [*https://sectbot.com/contest*](https://sectbot.com/contest)
 
-## **🔥Sect Bot Trending**
+## **🔥Crypto Vision Trending**
 
-Located at the top of the dApp, the Sect Bot Trending section highlights tokens that have received the most user votes in the past 24 hours. This feature offers free exposure to projects and helps you identify trending opportunities.
+Located at the top of the dApp, the Crypto Vision Trending section highlights tokens that have received the most user votes in the past 24 hours. This feature offers free exposure to projects and helps you identify trending opportunities.
 
 ## **💭Bubbles Section**
 
-The Bubbles Section presents a visual representation of recent calls made by Sect Bot. The larger the bubble, the more calls a token has received. This feature not only provides insights but also offers a visually engaging and interactive experience.
+The Bubbles Section presents a visual representation of recent calls made by Crypto Vision. The larger the bubble, the more calls a token has received. This feature not only provides insights but also offers a visually engaging and interactive experience.
 
 ***
 
 
-# Sect Bot Ads
+# Crypto Vision Ads
 
-This is the primary revenue source of Sect Bot.&#x20;
+This is the primary revenue source of Crypto Vision.&#x20;
 
 **Standard Advertising Rates:**
 
@@ -527,7 +527,7 @@ Sect Insider Alerts is designed to provide users with top-tier, currently with o
 ## &#x20;📌Key Features:
 
 * **Call Aggregation**:\
-  Sect Insider Alerts compiles the best calls from private groups and lounges using Sect Bot. The selection is driven by sophisticated statistical algorithms, such as the Wilson Score, to identify users with a high probability of making successful calls.
+  Sect Insider Alerts compiles the best calls from private groups and lounges using Crypto Vision. The selection is driven by sophisticated statistical algorithms, such as the Wilson Score, to identify users with a high probability of making successful calls.
 * **Multi-Chain Support**:\
   The channel currently operates across three major blockchain networks:
   * Solana
@@ -565,9 +565,9 @@ Sect Insider Alerts is designed to provide users with top-tier, currently with o
 ***Book your monthly membership now via our /payment menu of Sect Leaderboard Bot:*** [***https://t.me/sectleaderboardbot?start=payment***](https://t.me/sectleaderboardbot?start=payment)
 
 
-# Sect Bot Premium
+# Crypto Vision Premium
 
-The premium version of the Sect bot comes with specific perks:
+The premium version of the Crypto Vision comes with specific perks:
 
 * 40 calls per user in a 24-hour span, doubling the capacity compared to the free version.
 * Customizable button ads: As a group owner, you can set and modify ads any way you wish, with no ads coming from us.
@@ -575,5 +575,5 @@ The premium version of the Sect bot comes with specific perks:
 * Customizable minimum market cap & liquidity for calls: This allows for better quality control of the calls shared within your group.
 * Leaderboard settings: Tailor the leaderboard to fit the specific needs and preferences of your group.
 
-Sect Bot offers lifetime access to its premium features for a one-time fee of 0.2 ETH. To purchase, go to the /payment menu of Sect Leaderboard Bot: <https://t.me/sectleaderboardbot?start=payment>
+Crypto Vision offers lifetime access to its premium features for a one-time fee of 0.2 ETH. To purchase, go to the /payment menu of Sect Leaderboard Bot: <https://t.me/sectleaderboardbot?start=payment>
 

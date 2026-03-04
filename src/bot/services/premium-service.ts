@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Premium & Advertising Service
+ * Crypto Vision — Premium & Advertising Service
  *
  * Manages group premium subscriptions, advertisements, and payment tracking.
  *

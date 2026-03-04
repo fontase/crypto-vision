@@ -35,9 +35,6 @@ import type { BondingCurveState, TradeDirection } from '../types.js';
 
 // ─── Constants ────────────────────────────────────────────────
 
-/** Pump.fun program ID */
-const PUMP_PROGRAM_ID = new PublicKey('6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P');
-
 /** Platform trading fee in basis points (1%) */
 const PUMP_FUN_FEE_BPS = 100;
 
@@ -47,14 +44,8 @@ const BPS_DENOMINATOR = 10_000;
 /** Token decimals for Pump.fun tokens */
 const TOKEN_DECIMALS = 6;
 
-/** SOL decimals */
-const SOL_DECIMALS = 9;
-
 /** Default maximum slippage (bps) before a warning is emitted */
 const DEFAULT_WARNING_THRESHOLD_BPS = 200; // 2%
-
-/** Default target slippage per chunk when splitting orders */
-const DEFAULT_CHUNK_SLIPPAGE_BPS = 200; // 2%
 
 /** Maximum number of chunks to suggest for order splitting */
 const MAX_SUGGESTED_CHUNKS = 20;
@@ -273,7 +264,7 @@ export class SlippageCalculator {
    */
   async getBondingCurveState(mint: string): Promise<BondingCurveState> {
     const mintPubkey = new PublicKey(mint);
-    const [curvePda] = bondingCurvePda(mintPubkey, PUMP_PROGRAM_ID);
+    const curvePda = bondingCurvePda(mintPubkey);
     const accountInfo = await this.connection.getAccountInfo(curvePda);
 
     if (!accountInfo) {

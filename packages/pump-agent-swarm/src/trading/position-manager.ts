@@ -35,7 +35,6 @@ import {
   type Connection,
   PublicKey,
   Transaction,
-  SystemProgram,
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
@@ -43,7 +42,6 @@ import {
   createTransferInstruction,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import BN from 'bn.js';
 

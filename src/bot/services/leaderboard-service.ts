@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Leaderboard Service
+ * Crypto Vision — Leaderboard Service
  *
  * Computes calls leaderboard and performance leaderboard for groups
  * with configurable timeframes.

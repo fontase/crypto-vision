@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Price Tracker Worker
+ * Crypto Vision — Price Tracker Worker
  *
  * Background worker that continuously updates call performance by
  * fetching current token prices for all active (non-archived) calls.

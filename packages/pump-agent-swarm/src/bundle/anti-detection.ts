@@ -448,12 +448,12 @@ export class AntiDetection {
       burstProbability: burstProbability.toFixed(3),
     });
 
-    this.eventBus.emit({
-      type: 'anti-detection:timing-generated',
-      category: 'coordination',
-      source: 'anti-detection',
-      payload: { profile },
-    });
+    this.eventBus.emit(
+      'anti-detection:timing-generated',
+      'coordination' as SwarmEventCategory,
+      'anti-detection',
+      { profile },
+    );
 
     return profile;
   }
@@ -745,15 +745,15 @@ export class AntiDetection {
       nextWalletIndex: plan.nextWalletIndex,
     });
 
-    this.eventBus.emit({
-      type: 'anti-detection:wallet-rotation',
-      category: 'coordination',
-      source: 'anti-detection',
-      payload: {
+    this.eventBus.emit(
+      'anti-detection:wallet-rotation',
+      'coordination' as SwarmEventCategory,
+      'anti-detection',
+      {
         availableWallets: sequence.filter((s) => s.cooldownUntil <= now).length,
         cooldownWallets: cooldownWallets.length,
       },
-    });
+    );
 
     return plan;
   }
@@ -817,12 +817,12 @@ export class AntiDetection {
       recommendationCount: recommendations.length,
     });
 
-    this.eventBus.emit({
-      type: 'anti-detection:risk-scored',
-      category: 'analytics',
-      source: 'anti-detection',
-      payload: { score },
-    });
+    this.eventBus.emit(
+      'anti-detection:risk-scored',
+      'analytics' as SwarmEventCategory,
+      'anti-detection',
+      { score },
+    );
 
     return score;
   }
@@ -1091,12 +1091,12 @@ export class AntiDetection {
       ...roleCounts,
     });
 
-    this.eventBus.emit({
-      type: 'anti-detection:roles-assigned',
-      category: 'coordination',
-      source: 'anti-detection',
-      payload: { roleCounts },
-    });
+    this.eventBus.emit(
+      'anti-detection:roles-assigned',
+      'coordination' as SwarmEventCategory,
+      'anti-detection',
+      { roleCounts },
+    );
   }
 
   /**

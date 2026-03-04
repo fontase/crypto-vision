@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Hardcore Mode Service
+ * Crypto Vision — Hardcore Mode Service
  *
  * Manages performance-based group enforcement rounds.
  * Members who don't meet win rate thresholds are automatically removed.

@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Group Service
+ * Crypto Vision — Group Service
  *
  * Manages group registration, settings, membership, and wipes.
  *

@@ -268,11 +268,12 @@ export class SignalGenerator {
     this.pushSignalHistory(mint, { signals, curveSnapshot: snapshot, timestamp: Date.now() });
 
     // Emit event
-    this.eventBus.emit({
-      type: 'intelligence:signal-generated',
-      payload: { mint, overall: signals.overall, score: signals.score, confidence: signals.confidence },
-      timestamp: Date.now(),
-    });
+    this.eventBus.emit(
+      'intelligence:signal-generated',
+      'intelligence' as import('../types.js').SwarmEventCategory,
+      'signal-generator',
+      { mint, overall: signals.overall, score: signals.score, confidence: signals.confidence },
+    );
 
     return signals;
   }
@@ -293,7 +294,7 @@ export class SignalGenerator {
     const timer = setInterval(() => {
       void this.generateSignals(mint).catch((err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.error('Signal generation failed during monitoring', { mint, error: message });
+        this.logger.error(`Signal generation failed during monitoring for ${mint}`, new Error(message));
       });
     }, interval);
 
@@ -302,7 +303,7 @@ export class SignalGenerator {
     // Take an initial snapshot immediately
     void this.generateSignals(mint).catch((err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.error('Initial signal generation failed', { mint, error: message });
+      this.logger.error(`Initial signal generation failed for ${mint}`, new Error(message));
     });
   }
 

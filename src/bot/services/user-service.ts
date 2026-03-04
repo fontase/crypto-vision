@@ -1,5 +1,5 @@
 /**
- * Sect Bot — User Service
+ * Crypto Vision — User Service
  *
  * Manages user registration, lookup, rank calculation, and profile updates.
  *

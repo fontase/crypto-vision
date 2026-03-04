@@ -919,7 +919,7 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
    * Update P&L metrics after a successful buy.
    * Maintains volume-weighted average cost basis.
    */
-  private updatePnlAfterBuy(solSpent: BN, tokensReceived: BN, executionPrice: BN): void {
+  private updatePnlAfterBuy(solSpent: BN, _tokensReceived: BN, executionPrice: BN): void {
     this.advancedPnl.solSpent = this.advancedPnl.solSpent.add(solSpent);
     this.advancedPnl.totalVolume = this.advancedPnl.totalVolume.add(solSpent);
     this.advancedPnl.tokensHeld = this.stats.tokensHeld.clone();

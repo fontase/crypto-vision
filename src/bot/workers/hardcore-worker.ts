@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Hardcore Mode Worker
+ * Crypto Vision — Hardcore Mode Worker
  *
  * Background worker that checks for expired hardcore rounds
  * and processes member removals.

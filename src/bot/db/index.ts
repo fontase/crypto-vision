@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Database Connection
+ * Crypto Vision — Database Connection
  *
  * Drizzle ORM connection using the `postgres` (postgres.js) driver.
  * Singleton pattern — one pool per process, lazy-initialized.
@@ -25,7 +25,7 @@ export function getDb(): PostgresJsDatabase<typeof schema> {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      "DATABASE_URL is required for Sect Bot. " +
+      "DATABASE_URL is required for Crypto Vision. " +
         "Set it to a PostgreSQL connection string (e.g. postgres://user:pass@host:5432/dbname)",
     );
   }
@@ -49,7 +49,7 @@ export function getDb(): PostgresJsDatabase<typeof schema> {
 
   _db = drizzle(_client, { schema });
 
-  logger.info("Database connection established (Sect Bot)");
+  logger.info("Database connection established (Crypto Vision)");
   return _db;
 }
 
@@ -61,7 +61,7 @@ export async function closeDb(): Promise<void> {
     await _client.end();
     _client = null;
     _db = null;
-    logger.info("Database connection closed (Sect Bot)");
+    logger.info("Database connection closed (Crypto Vision)");
   }
 }
 

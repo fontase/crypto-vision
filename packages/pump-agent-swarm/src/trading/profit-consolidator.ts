@@ -37,8 +37,6 @@
 
 import {
     Connection,
-    Keypair,
-    LAMPORTS_PER_SOL,
     PublicKey,
     SystemProgram,
     Transaction,
@@ -414,14 +412,12 @@ export class ProfitConsolidator {
         action: string,
         metadata: Record<string, unknown>,
     ): void {
-        this.eventBus.emit({
-            category: 'system' as SwarmEventCategory,
-            action,
-            agentId: 'profit-consolidator',
-            details: action,
+        this.eventBus.emit(
+            `consolidator:${action}`,
+            'system' as SwarmEventCategory,
+            'profit-consolidator',
             metadata,
-            success: true,
-        });
+        );
     }
 
     private sleep(ms: number): Promise<void> {

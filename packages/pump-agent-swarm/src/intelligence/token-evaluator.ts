@@ -17,13 +17,11 @@ import {
   PublicKey,
 } from '@solana/web3.js';
 import type {
-  ParsedTransactionWithMeta,
   TokenAmount,
 } from '@solana/web3.js';
 import {
   bondingCurvePda,
-  getTokenPrice,
-  PUMP_SDK,
+  PumpSdk,
 } from '@pump-fun/pump-sdk';
 
 import type { SwarmEventBus } from '../infra/event-bus.js';
@@ -520,7 +518,7 @@ export class TokenEvaluator {
       return data;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Failed to fetch Pump.fun data', { mint, error: message });
+      this.logger.error('Failed to fetch Pump.fun data', new Error(message));
       return null;
     }
   }
@@ -528,7 +526,7 @@ export class TokenEvaluator {
   private async fetchBondingCurveState(mint: string): Promise<BondingCurveState | null> {
     try {
       const mintPk = new PublicKey(mint);
-      const [curvePda] = bondingCurvePda(mintPk, PUMP_SDK.programId);
+      const curvePda = bondingCurvePda(mintPk);
       const accountInfo = await this.connection.getAccountInfo(curvePda);
       if (!accountInfo?.data) {
         this.logger.warn('Bonding curve account not found', { mint });
@@ -536,13 +534,12 @@ export class TokenEvaluator {
       }
 
       // Decode bonding curve data using pump-sdk layout
-      const decoded = PUMP_SDK.coder.accounts.decode('bondingCurve', accountInfo.data);
+      const pumpSdk = new PumpSdk();
+      const decoded = pumpSdk.decodeBondingCurve(accountInfo);
       const virtualSolReserves = BigInt(decoded.virtualSolReserves.toString());
-      const virtualTokenReserves = BigInt(decoded.virtualTokenReserves.toString());
       const realSolReserves = BigInt(decoded.realSolReserves.toString());
-      const realTokenReserves = BigInt(decoded.realTokenReserves.toString());
 
-      const currentPriceSol = getTokenPrice(decoded.virtualSolReserves, decoded.virtualTokenReserves);
+      const currentPriceSol = decoded.virtualSolReserves.toNumber() / decoded.virtualTokenReserves.toNumber();
       const marketCapSol = lamportsToSol(virtualSolReserves);
       const graduationProgress = Math.min(
         100,
@@ -562,7 +559,7 @@ export class TokenEvaluator {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Failed to fetch bonding curve state', { mint, error: message });
+      this.logger.error('Failed to fetch bonding curve state', new Error(message));
       return null;
     }
   }
@@ -629,7 +626,7 @@ export class TokenEvaluator {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Failed to fetch holder data', { mint, error: message });
+      this.logger.error('Failed to fetch holder data', new Error(message));
       return { count: 0, topHolders: [], totalSupply: 0n, topHolderPercent: 0, gini: 0 };
     }
   }
@@ -675,7 +672,7 @@ export class TokenEvaluator {
   }> {
     try {
       const mintPk = new PublicKey(mint);
-      const [curvePda] = bondingCurvePda(mintPk, PUMP_SDK.programId);
+      const curvePda = bondingCurvePda(mintPk);
 
       // Fetch recent transaction signatures for the bonding curve
       const sigInfos = await this.connection.getSignaturesForAddress(curvePda, {
@@ -761,7 +758,7 @@ export class TokenEvaluator {
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Failed to fetch transaction data', { mint, error: message });
+      this.logger.error('Failed to fetch transaction data', new Error(message));
       return {
         totalCount: 0,
         uniqueWallets: 0,

@@ -25,9 +25,6 @@ import { bondingCurvePda } from '@pump-fun/pump-sdk';
 
 // ─── Constants ────────────────────────────────────────────────
 
-/** Pump.fun program ID */
-const PUMP_PROGRAM_ID = new PublicKey('6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P');
-
 /** Default number of checkpoints per trajectory plan */
 const DEFAULT_CHECKPOINT_COUNT = 20;
 
@@ -665,7 +662,7 @@ export class PriceTrajectoryController {
    */
   private async fetchBondingCurveState(mint: string): Promise<BondingCurveState> {
     const mintPubkey = new PublicKey(mint);
-    const [curvePda] = bondingCurvePda(mintPubkey, PUMP_PROGRAM_ID);
+    const curvePda = bondingCurvePda(mintPubkey);
     const accountInfo = await this.connection.getAccountInfo(curvePda);
 
     if (!accountInfo) {
@@ -829,7 +826,6 @@ export class PriceTrajectoryController {
     const gapPrice = expectedPrice - actualPrice; // positive = need to buy
 
     // Estimate reserves at current price using k invariant
-    const k = plan.startPrice; // proxy — we use the ratio
     const numCheckpoints = plan.checkpoints.length;
     const avgCheckpointBudget =
       Math.abs(plan.totalNetBuySol.toNumber()) / numCheckpoints;

@@ -151,15 +151,6 @@ export type {
   RebalanceSuggestion,
 } from './trading/position-manager.js';
 
-// ─── Strategies ───────────────────────────────────────────────
-export {
-  STRATEGY_ORGANIC,
-  STRATEGY_VOLUME,
-  STRATEGY_GRADUATION,
-  STRATEGY_EXIT,
-  PRESET_STRATEGIES,
-} from './strategies.js';
-
 // ─── Profit Consolidation ─────────────────────────────────────
 export { ProfitConsolidator } from './trading/profit-consolidator.js';
 export type {

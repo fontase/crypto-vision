@@ -31,8 +31,6 @@ import {
   PublicKey,
   Transaction,
   VersionedTransaction,
-  TransactionMessage,
-  ComputeBudgetProgram,
   ComputeBudgetInstruction,
   type TransactionInstruction,
   type SimulatedTransactionResponse,
@@ -282,23 +280,6 @@ function isVersionedTransaction(
   tx: Transaction | VersionedTransaction,
 ): tx is VersionedTransaction {
   return 'version' in tx || tx instanceof VersionedTransaction;
-}
-
-/**
- * Extract account keys from a legacy Transaction.
- */
-function getLegacyAccountKeys(tx: Transaction): PublicKey[] {
-  const keys: PublicKey[] = [];
-  for (const ix of tx.instructions) {
-    keys.push(ix.programId);
-    for (const key of ix.keys) {
-      keys.push(key.pubkey);
-    }
-  }
-  if (tx.feePayer) {
-    keys.push(tx.feePayer);
-  }
-  return keys;
 }
 
 /**
@@ -1029,7 +1010,7 @@ export class BundleValidator {
         const writableKeys = new Set<string>();
         const readableKeys = new Set<string>();
         const accountKeys = tx.message.getAccountKeys();
-        const numWritable = tx.message.header.numRequiredSignatures;
+        const _numWritable = tx.message.header.numRequiredSignatures;
 
         for (let k = 0; k < accountKeys.length; k++) {
           const key = accountKeys.get(k);
@@ -1239,10 +1220,7 @@ export class BundleValidator {
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      this.logger.error('Simulation RPC call failed', {
-        transactionIndex: index,
-        error: errorMessage,
-      });
+      this.logger.error(`Simulation RPC call failed for transaction ${index}`, err instanceof Error ? err : new Error(errorMessage));
 
       return {
         transactionIndex: index,
@@ -1264,7 +1242,7 @@ export class BundleValidator {
     expectedOutcomes: ExpectedOutcome[],
     simulations: SimulationResult[],
     warnings: ValidationWarning[],
-    errors: ValidationError[],
+    _errors: ValidationError[],
   ): void {
     // Aggregate account changes across all simulations
     const aggregatedChanges = new Map<string, AccountChange>();

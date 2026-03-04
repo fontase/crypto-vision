@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Database Schema (Drizzle ORM + PostgreSQL)
+ * Crypto Vision — Database Schema (Drizzle ORM + PostgreSQL)
  *
  * Complete relational schema for the Telegram call-tracking bot:
  * - Users, Groups, Group Memberships

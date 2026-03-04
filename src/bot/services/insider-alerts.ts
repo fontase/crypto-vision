@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Insider Alerts Engine
+ * Crypto Vision — Insider Alerts Engine
  *
  * Uses the Wilson Score interval to identify high-probability callers
  * and generates real-time alerts for subscribers.

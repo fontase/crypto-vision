@@ -194,7 +194,7 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
     this.config = config;
     this.connection = connection;
     this.eventBus = eventBus;
-    this.logger = new SwarmLogger({ level: 'info', prefix: 'exit-agent' });
+    this.logger = new SwarmLogger({ level: 'info', agentId: 'exit-agent' });
   }
 
   // ─── SDK Helper ─────────────────────────────────────────────
@@ -262,9 +262,7 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
       try {
         await this.checkConditions(mint, wallets, autoExecute);
       } catch (err) {
-        this.logger.error('Monitor cycle error', {
-          error: err instanceof Error ? err.message : String(err),
-        });
+        this.logger.error('Monitor cycle error', err instanceof Error ? err : new Error(String(err)));
       }
     }, intervalMs);
 
@@ -317,7 +315,6 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
     }
 
     const currentPrice = getTokenPrice(curve);
-    const currentPriceLamports = Math.floor(currentPrice * LAMPORTS_PER_SOL);
 
     // Update peak for trailing stop
     if (currentPrice > this.peakPrice) {
@@ -541,9 +538,7 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
       );
       curve = state.bondingCurve;
     } catch (err) {
-      this.logger.error('planExit: failed to fetch bonding curve', {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      this.logger.error('planExit: failed to fetch bonding curve', err instanceof Error ? err : new Error(String(err)));
       return this.emptyPlan(mint);
     }
 
@@ -1118,11 +1113,7 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
       };
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : String(err);
-      this.logger.error('Sell order failed', {
-        wallet: order.wallet.address,
-        tokenAmount: order.tokenAmount.toString(),
-        error: errMsg,
-      });
+      this.logger.error(`Sell order failed for wallet ${order.wallet.address} (${order.tokenAmount.toString()} tokens)`, new Error(errMsg));
       return {
         order: tradeOrder,
         signature: '',
@@ -1194,7 +1185,7 @@ export class ExitAgent extends EventEmitter<ExitAgentEvents> {
   private estimateSolProceeds(
     tokenAmount: BN,
     curve: DecodedBondingCurve,
-    currentPriceLamports: BN,
+    _currentPriceLamports: BN,
   ): BN {
     const virtualSol = new BN(curve.virtualSolReserves.toString());
     const virtualTokens = new BN(curve.virtualTokenReserves.toString());

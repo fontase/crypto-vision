@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Referral Service
+ * Crypto Vision — Referral Service
  *
  * Manages referral link generation, approval, tracking, and payouts.
  * Referrers earn 20% commission on all purchases made via their link.

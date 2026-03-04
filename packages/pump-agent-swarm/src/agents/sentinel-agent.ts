@@ -174,7 +174,7 @@ export class SentinelAgent extends EventEmitter<SentinelAgentEvents> {
   readonly id: string;
 
   private readonly config: EmergencyExitConfig;
-  private readonly connection: Connection;
+  private readonly _connection: Connection;
   private readonly eventBus: SwarmEventBus;
   private readonly logger: SwarmLogger;
 
@@ -213,7 +213,7 @@ export class SentinelAgent extends EventEmitter<SentinelAgentEvents> {
     super();
     this.id = `sentinel-${uuid().slice(0, 8)}`;
     this.config = config;
-    this.connection = connection;
+    this._connection = connection;
     this.eventBus = eventBus;
     this.logger = SwarmLogger.create(this.id, 'sentinel');
 
@@ -399,7 +399,7 @@ export class SentinelAgent extends EventEmitter<SentinelAgentEvents> {
 
     this.emergencyInProgress = true;
 
-    this.logger.error('EMERGENCY EXIT TRIGGERED', { reason });
+    this.logger.error(`EMERGENCY EXIT TRIGGERED: ${reason}`, new Error(reason));
 
     // Create alert record
     const alert: AlertRecord = {
@@ -644,10 +644,7 @@ export class SentinelAgent extends EventEmitter<SentinelAgentEvents> {
           await this.executeRuleAction(rule);
         }
       } catch (err) {
-        this.logger.error(`Safety rule evaluation failed: ${rule.id}`, {
-          ruleId: rule.id,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        this.logger.error(`Safety rule evaluation failed: ${rule.id}`, err instanceof Error ? err : new Error(String(err)));
       }
     }
   }

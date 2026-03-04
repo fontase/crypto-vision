@@ -775,7 +775,7 @@ app.onError(globalErrorHandler);
 
 const port = Number(process.env.PORT) || 8080;
 
-// ─── Sect Bot (optional) ─────────────────────────────────────
+// ─── Crypto Vision (optional) ─────────────────────────────────────
 import { startBot, stopBot } from "@/bot/index";
 
 const server = serve(
@@ -793,10 +793,10 @@ const server = serve(
       anomalyEngine.saveState().catch(() => { });
     }, 300_000); // every 5 minutes
 
-    // Start Sect Bot if enabled
+    // Start Crypto Vision if enabled
     if (process.env.SECTBOT_ENABLED === "true" && process.env.TELEGRAM_BOT_TOKEN) {
       startBot().catch((err) => {
-        log.error({ err }, "Failed to start Sect Bot");
+        log.error({ err }, "Failed to start Crypto Vision");
       });
     }
 
@@ -837,7 +837,7 @@ async function gracefulShutdown(signal: string) {
   // Stop WebSocket upstream connections
   await stopUpstreams();
 
-  // Stop Sect Bot
+  // Stop Crypto Vision
   try {
     await stopBot();
   } catch {

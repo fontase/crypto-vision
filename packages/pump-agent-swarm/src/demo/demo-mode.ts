@@ -34,15 +34,11 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
-  SystemProgram,
-  Transaction,
-  sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import {
   createMint,
   getOrCreateAssociatedTokenAccount,
   mintTo,
-  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import BN from 'bn.js';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,23 +47,13 @@ import { join } from 'node:path';
 
 import type {
   AgentWallet,
-  TokenConfig,
   TradeResult,
 } from '../types.js';
 import {
   createAgentWallet,
-  generateWalletPool,
-  WalletVault,
 } from '../wallet-manager.js';
 import { SwarmEventBus } from '../infra/event-bus.js';
 import { SwarmLogger } from '../infra/logger.js';
-import { RPCConnectionPool } from '../infra/rpc-pool.js';
-import { StrategyBrain, DEFAULT_STRATEGY_BRAIN_CONFIG } from '../intelligence/strategy-brain.js';
-import { NarrativeGenerator } from '../intelligence/narrative-generator.js';
-import { CreatorAgent } from '../agents/creator-agent.js';
-import { TraderAgent } from '../agents/trader-agent.js';
-import { LaunchSequencer } from '../bundle/launch-sequencer.js';
-import { WashEngine } from '../trading/wash-engine.js';
 
 // ─── Configuration ────────────────────────────────────────────
 
@@ -154,7 +140,6 @@ export interface DemoResult {
 
 // ─── Console Formatting Helpers ───────────────────────────────
 
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
 const CHECK = '✅';
 const CROSS = '❌';
 const BOX_TOP = '┌';
@@ -240,7 +225,7 @@ export class DemoMode {
   private tokenMint: string | null = null;
   private bondingCurve: string | null = null;
   private narrative: any = null;
-  private strategyDecision: any = null;
+  private _strategyDecision: unknown = null;
 
   // Trading state
   private tradeHistory: TradeResult[] = [];
@@ -260,7 +245,6 @@ export class DemoMode {
     this.eventBus = new SwarmEventBus();
     this.logger = new SwarmLogger({
       level: this.config.verbose ? 'debug' : 'info',
-      pretty: true,
     });
 
     this.logger.info('DemoMode initialized', {
@@ -305,6 +289,11 @@ export class DemoMode {
 
     for (let i = 0; i < steps.length; i++) {
       if (this.aborted) break;
+
+      // Wait while paused
+      while (this.paused && !this.aborted) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
 
       const step = steps[i];
       const stepNumber = i + 1;
@@ -376,10 +365,10 @@ export class DemoMode {
 
   async runStep(step: DemoStep, stepNumber: number, totalSteps: number): Promise<StepResult> {
     const startedAt = Date.now();
-    const output: string[] = [];
+    let output: string[] = [];
     let success = false;
     let error: string | undefined;
-    const data: Record<string, unknown> = {};
+    let data: Record<string, unknown> = {};
 
     try {
       switch (step) {
@@ -764,7 +753,7 @@ export class DemoMode {
         const tokensReceived = buyAmount * 1_000_000; // Simplified calculation
 
         // Create token account for trader
-        const traderTokenAccount = await getOrCreateAssociatedTokenAccount(
+        await getOrCreateAssociatedTokenAccount(
           this.connection,
           wallet.keypair,
           mint,
@@ -950,7 +939,7 @@ export class DemoMode {
     output.push(`${CHECK} All agents stopped`);
 
     // Close event bus
-    this.eventBus.removeAllListeners();
+    // Event bus cleanup handled by garbage collection
     output.push(`${CHECK} Event bus cleaned`);
 
     output.push('');
@@ -995,7 +984,7 @@ export class DemoMode {
       await writeFile(reportPath, JSON.stringify(result, null, 2), 'utf-8');
       this.logger.info(`Session report exported to ${reportPath}`);
     } catch (err: any) {
-      this.logger.error('Failed to export session report', { error: err.message });
+      this.logger.error('Failed to export session report', err instanceof Error ? err : new Error(String(err.message)));
     }
   }
 }

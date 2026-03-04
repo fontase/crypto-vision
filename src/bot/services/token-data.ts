@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Token Data Service
+ * Crypto Vision — Token Data Service
  *
  * Fetches real-time token data from multiple on-chain/off-chain sources.
  * Uses the existing crypto-vision data sources for market data, with

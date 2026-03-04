@@ -40,10 +40,9 @@
  */
 
 import BN from 'bn.js';
-import { v4 as uuidv4 } from 'uuid';
 
 import { SwarmEventBus } from '../infra/event-bus.js';
-import type { TradeDirection, SwarmEventCategory } from '../types.js';
+import type { SwarmEvent, TradeDirection, SwarmEventCategory } from '../types.js';
 
 // ─── Constants ────────────────────────────────────────────────
 
@@ -257,11 +256,6 @@ interface AgentState {
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** Convert BN lamports to a floating-point SOL number */
-function bnToSol(lamports: BN): number {
-  return lamports.toNumber() / LAMPORTS_PER_SOL;
-}
-
 /** Safe percentage: (numerator / denominator) * 100, returns 0 if denominator is zero */
 function safePercent(numerator: BN, denominator: BN): number {
   if (denominator.isZero()) return 0;
@@ -341,18 +335,16 @@ export class PnLTracker {
     const agent = this.getOrCreateAgent(agentId);
     agent.solDeployed = agent.solDeployed.add(solAmount);
 
-    this.eventBus.emit({
-      id: uuidv4(),
-      type: 'pnl:funding',
-      category: 'trading' as SwarmEventCategory,
-      source: EVENT_SOURCE,
-      payload: {
+    this.eventBus.emit(
+      'pnl:funding',
+      'trading' as SwarmEventCategory,
+      EVENT_SOURCE,
+      {
         agentId,
         solAmount: solAmount.toString(),
         totalDeployed: agent.solDeployed.toString(),
       },
-      timestamp: Date.now(),
-    });
+    );
   }
 
   /**
@@ -910,19 +902,17 @@ export class PnLTracker {
 
       // Emit alert on significant drawdown (>10%)
       if (drawdownPercent > 10) {
-        this.eventBus.emit({
-          id: uuidv4(),
-          type: 'pnl:drawdown-alert',
-          category: 'trading' as SwarmEventCategory,
-          source: EVENT_SOURCE,
-          payload: {
+        this.eventBus.emit(
+          'pnl:drawdown-alert',
+          'trading' as SwarmEventCategory,
+          EVENT_SOURCE,
+          {
             currentValue: currentValue.toString(),
             peakValue: this.peakPortfolioValue.toString(),
             drawdownPercent,
             maxDrawdownPercent: this.maxDrawdownPercent,
           },
-          timestamp: now,
-        });
+        );
       }
     }
   }
@@ -971,8 +961,7 @@ export class PnLTracker {
    * Subscribe to trade events on the event bus for automatic tracking.
    */
   private subscribeToEvents(): void {
-    this.eventBus.subscribe('trade:executed', {
-      handler: (event) => {
+    this.eventBus.subscribe('trade:executed', (event: SwarmEvent) => {
         const payload = event.payload as Record<string, unknown>;
         // Auto-ingest trades from the event bus if they include our fields
         if (
@@ -985,12 +974,9 @@ export class PnLTracker {
             this.recordTrade(record);
           }
         }
-      },
-      source: EVENT_SOURCE,
     });
 
-    this.eventBus.subscribe('wallet:funded', {
-      handler: (event) => {
+    this.eventBus.subscribe('wallet:funded', (event: SwarmEvent) => {
         const payload = event.payload as Record<string, unknown>;
         if (
           typeof payload['agentId'] === 'string' &&
@@ -1004,8 +990,6 @@ export class PnLTracker {
             this.recordFunding(agentId, solAmount);
           }
         }
-      },
-      source: EVENT_SOURCE,
     });
   }
 
@@ -1014,12 +998,11 @@ export class PnLTracker {
    */
   private emitTradeEvent(trade: TradeRecord): void {
     const agentPnl = this.getAgentPnL(trade.agentId);
-    this.eventBus.emit({
-      id: uuidv4(),
-      type: 'pnl:updated',
-      category: 'trading' as SwarmEventCategory,
-      source: EVENT_SOURCE,
-      payload: {
+    this.eventBus.emit(
+      'pnl:updated',
+      'trading' as SwarmEventCategory,
+      EVENT_SOURCE,
+      {
         tradeId: trade.id,
         agentId: trade.agentId,
         direction: trade.direction,
@@ -1029,8 +1012,7 @@ export class PnLTracker {
         totalPnlPercent: agentPnl.totalPnlPercent,
         winRate: agentPnl.winRate,
       },
-      timestamp: Date.now(),
-    });
+    );
   }
 
   // ─── Internal Helpers ───────────────────────────────────────

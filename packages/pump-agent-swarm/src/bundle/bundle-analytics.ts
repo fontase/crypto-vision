@@ -222,7 +222,7 @@ function rawToTokens(raw: BN): number {
 /**
  * Convert a bigint to BN for interop with existing types.
  */
-function bigintToBN(val: bigint): BN {
+function _bigintToBN(val: bigint): BN {
   return new BN(val.toString());
 }
 

@@ -1,7 +1,7 @@
 /**
- * Sect Bot — dApp API Routes
+ * Crypto Vision — dApp API Routes
  *
- * REST endpoints for the Sect Bot web dApp, exposing leaderboard data,
+ * REST endpoints for the Crypto Vision web dApp, exposing leaderboard data,
  * caller profiles, trending tokens, search, and contest data.
  *
  * Routes:

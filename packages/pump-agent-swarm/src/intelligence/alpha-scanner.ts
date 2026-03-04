@@ -287,7 +287,7 @@ export class AlphaScanner {
       return discovered;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      this.logger.error('Alpha scan failed', { scanId, error: message });
+      this.logger.error(`Alpha scan failed [${scanId}]`, new Error(message));
       return [];
     } finally {
       this.scanning = false;

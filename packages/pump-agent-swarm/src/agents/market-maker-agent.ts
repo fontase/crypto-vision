@@ -31,8 +31,6 @@ import {
   PUMP_SDK,
   OnlinePumpSdk,
   getTokenPrice,
-  getBuyTokenAmountFromSolAmount,
-  getSellSolAmountFromTokenAmount,
 } from '@pump-fun/pump-sdk';
 import type { DecodedBondingCurve } from '@pump-fun/pump-sdk';
 import BN from 'bn.js';

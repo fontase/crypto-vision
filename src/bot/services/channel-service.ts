@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Call Channel Service
+ * Crypto Vision — Call Channel Service
  *
  * Manages forwarding of calls to dedicated Telegram channels.
  *

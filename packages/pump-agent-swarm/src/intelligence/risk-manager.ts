@@ -889,11 +889,7 @@ export class RiskManager {
     this.circuitBreakerTrippedAt = now;
     this.circuitBreakerAutoResetAt = now + this.config.circuitBreakerCooldown;
 
-    this.logger.error('CIRCUIT BREAKER TRIPPED — all new trades halted', {
-      reason,
-      cooldownMs: this.config.circuitBreakerCooldown,
-      autoResetAt: new Date(this.circuitBreakerAutoResetAt).toISOString(),
-    });
+    this.logger.error(`CIRCUIT BREAKER TRIPPED — all new trades halted: ${reason} (cooldown=${this.config.circuitBreakerCooldown}ms, resetAt=${new Date(this.circuitBreakerAutoResetAt).toISOString()})`);
 
     this.eventBus.emit(
       'risk:circuit-breaker-tripped',

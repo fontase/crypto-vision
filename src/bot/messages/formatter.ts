@@ -1,5 +1,5 @@
 /**
- * Sect Bot — Message Formatting
+ * Crypto Vision — Message Formatting
  *
  * Telegram message templates for all bot responses.
  * Uses HTML parse mode for rich formatting.

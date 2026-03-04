@@ -1,5 +1,5 @@
 /**
- * Sect Bot — PNL Card Generator
+ * Crypto Vision — PNL Card Generator
  *
  * Generates PNL (Profit & Loss) card images using HTML Canvas.
  * Creates visually appealing cards showing call performance data.
@@ -215,7 +215,7 @@ export function generatePnlCard(data: PnlCardData): Buffer {
   // Branding
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "12px Arial, sans-serif";
-  ctx.fillText("Sect Bot", CARD_WIDTH - 80, CARD_HEIGHT - 25);
+  ctx.fillText("Crypto Vision", CARD_WIDTH - 80, CARD_HEIGHT - 25);
 
   return canvas.toBuffer("image/png");
 }
@@ -300,7 +300,7 @@ export function generateGroupPnlCard(data: {
   // Branding
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "12px Arial, sans-serif";
-  ctx.fillText("Sect Bot", CARD_WIDTH - 80, CARD_HEIGHT + 80);
+  ctx.fillText("Crypto Vision", CARD_WIDTH - 80, CARD_HEIGHT + 80);
 
   return canvas.toBuffer("image/png");
 }
@@ -420,7 +420,7 @@ export function generateRankCard(data: {
   // Branding
   ctx.fillStyle = "rgba(255,255,255,0.3)";
   ctx.font = "12px Arial, sans-serif";
-  ctx.fillText("Sect Bot", 520, 380);
+  ctx.fillText("Crypto Vision", 520, 380);
 
   return canvas.toBuffer("image/png");
 }

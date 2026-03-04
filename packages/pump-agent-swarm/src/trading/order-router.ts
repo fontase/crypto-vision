@@ -42,7 +42,6 @@ import {
   type Transaction,
   type VersionedTransaction,
 } from '@solana/web3.js';
-import bs58 from 'bs58';
 
 import { SwarmEventBus } from '../infra/event-bus.js';
 import type { RpcPool } from '../infra/rpc-pool.js';
@@ -1174,14 +1173,12 @@ export class OrderRouter {
    * Emit a trading-category event through the swarm event bus.
    */
   private emitEvent(type: string, payload: Record<string, unknown>): void {
-    this.eventBus.emit({
-      id: crypto.randomUUID(),
+    this.eventBus.emit(
       type,
-      category: 'trading',
-      source: 'order-router',
+      'trading',
+      'order-router',
       payload,
-      timestamp: Date.now(),
-    });
+    );
   }
 
   // ── Private: Utilities ──────────────────────────────────────

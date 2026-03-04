@@ -1,4 +1,4 @@
--- Sect Bot — Initial Migration
+-- Crypto Vision — Initial Migration
 -- Generated from Drizzle ORM schema (src/bot/db/schema.ts)
 --
 -- Creates all tables, enums, indexes, and foreign keys for the
