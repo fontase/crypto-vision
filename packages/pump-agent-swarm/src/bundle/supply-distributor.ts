@@ -16,7 +16,6 @@ import {
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
-  getAccount,
   createAssociatedTokenAccountInstruction,
   createTransferInstruction,
   TOKEN_PROGRAM_ID,
@@ -345,17 +344,17 @@ export class SupplyDistributor {
       estimatedTimeMs: plan.estimatedTimeMs,
     });
 
-    this.eventBus.emit({
-      type: 'distribution:planned',
-      category: 'bundle',
-      source: 'supply-distributor',
-      payload: {
+    this.eventBus.emit(
+      'distribution:planned',
+      'bundle',
+      'supply-distributor',
+      {
         planId: plan.id,
         mint,
         strategy: config.strategy,
         transferCount: transfers.length,
       },
-    });
+    );
 
     return plan;
   }
@@ -384,12 +383,12 @@ export class SupplyDistributor {
       transferCount: plan.transfers.length,
     });
 
-    this.eventBus.emit({
-      type: 'distribution:started',
-      category: 'bundle',
-      source: 'supply-distributor',
-      payload: { planId: plan.id },
-    });
+    this.eventBus.emit(
+      'distribution:started',
+      'bundle',
+      'supply-distributor',
+      { planId: plan.id },
+    );
 
     const mintPubkey = new PublicKey(plan.mint);
 
@@ -431,7 +430,7 @@ export class SupplyDistributor {
           });
         }
 
-        this.logger.error('Batch failed', {
+        this.logger.error('Batch failed', undefined, {
           planId: plan.id,
           batchIndex: batchIdx,
           error: errorMessage,
@@ -457,18 +456,18 @@ export class SupplyDistributor {
       durationMs: result.completedAt - result.startedAt,
     });
 
-    this.eventBus.emit({
-      type: `distribution:${result.status}`,
-      category: 'bundle',
-      source: 'supply-distributor',
-      payload: {
+    this.eventBus.emit(
+      `distribution:${result.status}`,
+      'bundle',
+      'supply-distributor',
+      {
         planId: plan.id,
         status: result.status,
         successful: result.successfulTransfers,
         failed: result.failedTransfers,
         signatures: result.signatures,
       },
-    });
+    );
 
     return result;
   }
