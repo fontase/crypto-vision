@@ -141,7 +141,7 @@ export class TimingEngine {
     this.connection = connection;
     this.eventBus = eventBus;
     this.logger = SwarmLogger.create('timing-engine', 'bundle');
-    this.logger.setPhase('init');
+    this.logger.setPhase('initializing');
 
     this.startSlotSubscription();
     this.listenForAgentReady();
@@ -297,7 +297,7 @@ export class TimingEngine {
           targetSlot: this.tracker.currentSlot,
         };
         this.logger.warn('Agent synchronisation timed out', { syncId, result });
-        this.eventBus.emit('agents:sync-timeout', 'coordination', 'timing-engine', result);
+        this.eventBus.emit('agents:sync-timeout', 'coordination', 'timing-engine', { ...result });
         resolve(result);
       }, readyTimeout);
 
@@ -579,7 +579,7 @@ export class TimingEngine {
           };
 
           this.logger.info('All agents synchronised', { syncId: key, result });
-          this.eventBus.emit('agents:synchronized', 'coordination', 'timing-engine', result);
+          this.eventBus.emit('agents:synchronized', 'coordination', 'timing-engine', { ...result });
           sync.resolve(result);
         }
       }
