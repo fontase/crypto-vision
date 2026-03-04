@@ -48,6 +48,9 @@ export { SwarmCoordinator } from './swarm.js';
 export { CreatorAgent } from './agents/creator-agent.js';
 export { TraderAgent } from './agents/trader-agent.js';
 
+// ─── Infrastructure ──────────────────────────────────────────
+export { RpcPool, DEFAULT_RPC_ENDPOINTS } from './infra/rpc-pool.js';
+
 // ─── Analytics (x402) ─────────────────────────────────────────
 export { AnalyticsClient } from './analytics/x402-client.js';
 
