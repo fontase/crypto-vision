@@ -164,8 +164,8 @@ function mean(values: number[]): number {
   return sum / values.length;
 }
 
-/** Sum of an array */
-function sum(values: number[]): number {
+/** Sum of an array — exported for reuse in portfolio analytics */
+export function sum(values: number[]): number {
   let s = 0;
   for (const v of values) s += v;
   return s;
@@ -616,9 +616,6 @@ export class PortfolioOptimizer {
     // Diversification ratio = weighted average individual volatility / portfolio volatility
     // Without individual volatilities, approximate as 1 / sqrt(HHI) / sqrt(n) normalized
     // A well-diversified portfolio has ratio > 1
-    const diversificationRatio = allocation.risk > 0 && concentrationIndex > 0
-      ? 1 / (Math.sqrt(concentrationIndex) * allocation.risk / allocation.risk)
-      : 1;
     // Simplified: ratio = 1 / sqrt(HHI) for equal-vol assets
     const diversificationRatioAdjusted = concentrationIndex > 0
       ? 1 / Math.sqrt(concentrationIndex)

@@ -26,7 +26,6 @@ import {
 import {
   PUMP_SDK,
   OnlinePumpSdk,
-  getBuyTokenAmountFromSolAmount,
   getTokenPrice,
 } from '@pump-fun/pump-sdk';
 import type { DecodedBondingCurve } from '@pump-fun/pump-sdk';
@@ -453,7 +452,7 @@ export class AccumulatorAgent extends EventEmitter<AccumulatorAgentEvents> {
   /**
    * How many tokens to buy this slice, per strategy.
    */
-  private computeSliceSize(remaining: BN, curve: DecodedBondingCurve): BN {
+  private computeSliceSize(remaining: BN, _curve: DecodedBondingCurve): BN {
     const elapsed = Date.now() - this.startedAt;
     const remainingTime = Math.max(1, this.durationMs - elapsed);
 

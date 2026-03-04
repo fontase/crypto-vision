@@ -135,7 +135,7 @@ export class VolumeAgent extends EventEmitter<VolumeAgentEvents> {
   private mint: PublicKey | null = null;
   private running = false;
   private loopTimer: ReturnType<typeof setTimeout> | null = null;
-  private startedAt = 0;
+  private _startedAt = 0;
 
   /** Rolling window of recent trade amounts + timestamps for rate calculation */
   private tradeLog: Array<{ timestampMs: number; volumeLamports: BN }> = [];
@@ -183,7 +183,7 @@ export class VolumeAgent extends EventEmitter<VolumeAgentEvents> {
 
     this.mint = new PublicKey(mint);
     this.running = true;
-    this.startedAt = Date.now();
+    this._startedAt = Date.now();
     this.patternCycleCount = 0;
 
     console.log(
