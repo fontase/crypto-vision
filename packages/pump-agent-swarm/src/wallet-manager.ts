@@ -931,6 +931,17 @@ export class WalletVault extends EventEmitter<WalletVaultEvents> {
     this.importKeys(keys);
   }
 
+  // ─── Pool Access ──────────────────────────────────────────
+
+  /**
+   * Get all wallets in the vault pool (assigned and unassigned).
+   * Useful for supply distribution and balance queries.
+   */
+  getAllWallets(): AgentWallet[] {
+    this.ensureInitialized();
+    return [...this.wallets];
+  }
+
   // ─── Internal Helpers ─────────────────────────────────────
 
   private ensureInitialized(): void {

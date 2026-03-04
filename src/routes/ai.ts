@@ -25,12 +25,12 @@
 import { Hono } from "hono";
 import { cache } from "../lib/cache.js";
 import { aiComplete, isAIConfigured, getConfiguredProviders } from "../lib/ai.js";
-import { aiQueue } from "../lib/queue.js";
+import { aiQueue, QueueFullError } from "../lib/queue.js";
 import * as cg from "../sources/coingecko.js";
 import * as llama from "../sources/defillama.js";
 import * as alt from "../sources/alternative.js";
 import { log } from "../lib/logger.js";
-import { ApiError } from "../lib/api-error.js";
+import { ApiError, extractErrorMessage } from "../lib/api-error.js";
 import { AskBodySchema, CoinIdSchema, validateBody, validateParam } from "../lib/validation.js";
 
 export const aiRoutes = new Hono();
@@ -99,12 +99,12 @@ Respond in JSON with this exact structure:
       tokensUsed,
       timestamp: new Date().toISOString(),
     });
-  } catch (err: any) {
-    if (err.name === "QueueFullError") {
+  } catch (err: unknown) {
+    if (err instanceof QueueFullError) {
       return ApiError.serviceUnavailable(c, "AI service busy — please retry");
     }
     log.error({ err }, "AI sentiment failed");
-    return ApiError.aiError(c, "AI sentiment analysis failed", err.message);
+    return ApiError.aiError(c, "AI sentiment analysis failed", extractErrorMessage(err));
   }
 });
 
@@ -163,12 +163,12 @@ Respond in JSON:
       tokensUsed,
       timestamp: new Date().toISOString(),
     });
-  } catch (err: any) {
-    if (err.name === "QueueFullError") {
+  } catch (err: unknown) {
+    if (err instanceof QueueFullError) {
       return ApiError.serviceUnavailable(c, "AI service busy — please retry");
     }
     log.error({ err }, "AI digest failed");
-    return ApiError.aiError(c, "AI digest generation failed", err.message);
+    return ApiError.aiError(c, "AI digest generation failed", extractErrorMessage(err));
   }
 });
 
@@ -239,12 +239,12 @@ Respond in JSON:
       tokensUsed,
       timestamp: new Date().toISOString(),
     });
-  } catch (err: any) {
-    if (err.name === "QueueFullError") {
+  } catch (err: unknown) {
+    if (err instanceof QueueFullError) {
       return ApiError.serviceUnavailable(c, "AI service busy — please retry");
     }
     log.error({ err }, "AI signals failed");
-    return ApiError.aiError(c, "AI signals generation failed", err.message);
+    return ApiError.aiError(c, "AI signals generation failed", extractErrorMessage(err));
   }
 });
 
@@ -389,7 +389,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 600);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI compare failed");
     return c.json({ error: err.message }, 500);
   }
@@ -428,7 +428,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 3600); // 1hr cache for education
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI explain failed");
     return c.json({ error: err.message }, 500);
   }
@@ -485,7 +485,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI risk assessment failed");
     return c.json({ error: err.message }, 500);
   }
@@ -536,7 +536,7 @@ Respond in JSON:
     await cache.set("ai:yield-analysis", JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI yield analysis failed");
     return c.json({ error: err.message }, 500);
   }
@@ -591,7 +591,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 600);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI portfolio review failed");
     return c.json({ error: err.message }, 500);
   }
@@ -640,7 +640,7 @@ Respond in JSON:
     await cache.set("ai:whale-alert", JSON.stringify(parsed), 600);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI whale alert failed");
     return c.json({ error: err.message }, 500);
   }
@@ -694,7 +694,7 @@ Respond in JSON:
     await cache.set("ai:narrative", JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI narrative failed");
     return c.json({ error: err.message }, 500);
   }
@@ -739,7 +739,7 @@ Respond in JSON:
     await cache.set("ai:fg-explain", JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI fear greed explain failed");
     return c.json({ error: err.message }, 500);
   }
@@ -791,7 +791,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI chain compare failed");
     return c.json({ error: err.message }, 500);
   }
@@ -833,7 +833,7 @@ Respond in JSON:
     await cache.set("ai:stablecoin-risk", JSON.stringify(parsed), 1800);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI stablecoin risk failed");
     return c.json({ error: err.message }, 500);
   }
@@ -886,7 +886,7 @@ Respond in JSON:
     await cache.set("ai:defi-overview", JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI defi overview failed");
     return c.json({ error: err.message }, 500);
   }
@@ -937,7 +937,7 @@ Respond in JSON:
     await cache.set("ai:market-regime", JSON.stringify(parsed), 900);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI market regime failed");
     return c.json({ error: err.message }, 500);
   }
@@ -977,7 +977,7 @@ Respond in JSON:
     await cache.set(cacheKey, JSON.stringify(parsed), 600);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI correlation failed");
     return c.json({ error: err.message }, 500);
   }
@@ -1027,7 +1027,7 @@ Respond in JSON:
     await cache.set("ai:news-analysis", JSON.stringify(parsed), 600);
 
     return c.json({ data: parsed, model, tokensUsed, timestamp: new Date().toISOString() });
-  } catch (err: any) {
+  } catch (err: unknown) {
     log.error({ err }, "AI news analysis failed");
     return c.json({ error: err.message }, 500);
   }

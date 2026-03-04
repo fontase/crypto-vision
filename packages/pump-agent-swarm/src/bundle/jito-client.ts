@@ -145,7 +145,6 @@ let rpcIdCounter = 0;
 export class JitoClient {
   private readonly config: JitoBundleConfig;
   private readonly log: SwarmLogger;
-  private readonly apiUrl: string;
   private tipAccountCache: TipAccountCache | null = null;
 
   constructor(config: JitoBundleConfig) {
@@ -153,7 +152,6 @@ export class JitoClient {
       ...config,
       maxBundleSize: Math.min(config.maxBundleSize, MAX_BUNDLE_SIZE),
     };
-    this.apiUrl = config.blockEngineUrl.replace(/\/+$/, '') + '/api/v1/bundles';
     this.log = new SwarmLogger({
       level: 'info',
       category: 'jito-client',
@@ -204,8 +202,7 @@ export class JitoClient {
     if (!response.result) {
       const errorMsg =
         response.error?.message ?? 'Unknown error submitting bundle';
-      this.log.error('Bundle submission failed', {
-        error: errorMsg,
+      this.log.error('Bundle submission failed', new Error(errorMsg), {
         code: response.error?.code,
       });
       return {
@@ -334,7 +331,7 @@ export class JitoClient {
     if (response.error || !response.result) {
       const errorMsg =
         response.error?.message ?? 'Failed to fetch tip accounts';
-      this.log.error('Failed to fetch tip accounts', { error: errorMsg });
+      this.log.error('Failed to fetch tip accounts', new Error(errorMsg));
       throw new Error(`Failed to fetch Jito tip accounts: ${errorMsg}`);
     }
 

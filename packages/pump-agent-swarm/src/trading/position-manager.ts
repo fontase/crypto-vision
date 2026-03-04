@@ -835,11 +835,12 @@ export class PositionManager {
     // If no recent trade events, try to derive price from on-chain data
     // by looking at bonding curve state events
     const curveEvents = this.eventBus.getHistory({
-      type: 'curve:*',
-      limit: 10,
+      category: 'trading',
+      limit: 50,
     });
 
     for (const event of curveEvents.reverse()) {
+      if (!event.type.startsWith('curve:')) continue;
       const payload = event.payload as Record<string, unknown>;
       if (payload['mint'] === mint && payload['currentPriceSol']) {
         // Convert SOL price to lamports-per-token

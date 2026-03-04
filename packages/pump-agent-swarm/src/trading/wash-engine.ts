@@ -21,7 +21,6 @@ import { v4 as uuid } from 'uuid';
 import type {
   AgentWallet,
   TradeDirection,
-  TradeOrder,
   TradeResult,
   WashTradeRoute,
   TradeCycle,
@@ -100,7 +99,6 @@ interface WalletPersonality {
 
 export class WashEngine {
   private readonly wallets: AgentWallet[];
-  private readonly connection: Connection;
   private config: WashEngineConfig;
   private readonly eventBus: SwarmEventBus;
   private readonly logger: SwarmLogger;
@@ -140,7 +138,6 @@ export class WashEngine {
     }
 
     this.wallets = wallets;
-    this.connection = connection;
     this.config = { ...config };
     this.eventBus = eventBus;
     this.logger = SwarmLogger.create('wash-engine', 'trading');
@@ -472,7 +469,7 @@ export class WashEngine {
    * 3. Assign wallet + direction, enforcing the consecutive-buy/sell cap.
    * 4. Attach randomised delays.
    */
-  private buildRoutes(mint: string, cycleId: string): WashTradeRoute[] {
+  private buildRoutes(_mint: string, _cycleId: string): WashTradeRoute[] {
     const n = this.config.tradesPerCycle;
     if (n < 2) {
       throw new Error('tradesPerCycle must be >= 2');
@@ -659,7 +656,7 @@ export class WashEngine {
   private async executeSingleTrade(
     trader: TraderAgent,
     route: WashTradeRoute,
-    cycleId: string,
+    _cycleId: string,
   ): Promise<TradeResult> {
     const slippage = this.config.slippageBps ?? 500;
 

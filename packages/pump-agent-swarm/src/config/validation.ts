@@ -61,15 +61,15 @@ function validateRpc(rpc: RpcPoolConfig, errors: string[], warnings: string[]): 
     warnings.push('rpc.endpoints: only one RPC endpoint configured — no failover available');
   }
 
-  if (rpc.healthCheckIntervalMs < 5_000) {
+  if (rpc.healthCheckIntervalMs !== undefined && rpc.healthCheckIntervalMs < 5_000) {
     warnings.push(`rpc.healthCheckIntervalMs: ${rpc.healthCheckIntervalMs}ms is very aggressive — consider >= 10000ms`);
   }
 
-  if (rpc.maxRetries < 1) {
+  if (rpc.maxRetries !== undefined && rpc.maxRetries < 1) {
     errors.push(`rpc.maxRetries: must be >= 1, got ${rpc.maxRetries}`);
   }
 
-  if (rpc.requestTimeoutMs < 1_000) {
+  if (rpc.requestTimeoutMs !== undefined && rpc.requestTimeoutMs < 1_000) {
     warnings.push(`rpc.requestTimeoutMs: ${rpc.requestTimeoutMs}ms is very low — may cause false positives`);
   }
 }
