@@ -63,6 +63,8 @@ export type {
 } from './agents/narrative-agent.js';
 export { VolumeAgent } from './agents/volume-agent.js';
 export type { VolumeConfig, VolumeStats } from './agents/volume-agent.js';
+export { SentinelAgent } from './agents/sentinel-agent.js';
+export type { SafetyRule, HealthReport, HealthCheck } from './agents/sentinel-agent.js';
 
 // ─── Bundle / Jito ────────────────────────────────────────────
 export { JitoClient } from './bundle/jito-client.js';
