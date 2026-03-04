@@ -7,6 +7,7 @@
  */
 
 import type { Context } from "hono";
+import type { StatusCode } from "hono/utils/http-status";
 
 // ─── Error Codes ─────────────────────────────────────────────
 
@@ -148,7 +149,7 @@ export function apiError(c: Context, options: ApiErrorOptions) {
     c.header("Retry-After", String(options.retryAfter));
   }
 
-  return c.json(body, status as any);
+  return c.json(body, status as StatusCode);
 }
 
 // ─── Convenience Factories ───────────────────────────────────

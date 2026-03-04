@@ -27,8 +27,9 @@ interface AIProvider {
     maxTokens: number,
     temperature: number,
   ) => { url: string; init: FetchOptions };
-  extractText: (response: any) => string;
-  extractUsage: (response: any) => number | undefined;
+  // Provider response shapes vary (OpenAI, Anthropic, Gemini, etc.) — typed as Record for safety
+  extractText: (response: Record<string, unknown>) => string;
+  extractUsage: (response: Record<string, unknown>) => number | undefined;
 }
 
 const PROVIDERS: AIProvider[] = [
@@ -225,7 +226,7 @@ const PROVIDERS: AIProvider[] = [
       },
     }),
     extractText: (r) =>
-      r.content?.map((b: any) => b.text).join("") || "",
+      (r.content as Array<{ text: string }> | undefined)?.map((b) => b.text).join("") || "",
     extractUsage: (r) =>
       (r.usage?.input_tokens || 0) + (r.usage?.output_tokens || 0),
   },
@@ -356,7 +357,7 @@ export async function aiComplete(
         temperature,
       );
 
-      const response = await fetchJSON<any>(url, init);
+      const response = await fetchJSON<Record<string, unknown>>(url, init);
       const text = provider.extractText(response);
       const tokensUsed = provider.extractUsage(response);
 
@@ -381,9 +382,10 @@ export async function aiComplete(
       }
 
       return result;
-    } catch (err: any) {
-      lastError = err;
-      const status = err.status || err.statusCode;
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      const status = (err as Record<string, unknown>)?.status as number | undefined
+        ?? (err as Record<string, unknown>)?.statusCode as number | undefined;
 
       // Auth error → try next provider
       if (status === 401 || status === 403) {
@@ -405,7 +407,7 @@ export async function aiComplete(
 
       // Other error → still try next
       log.warn(
-        { provider: provider.name, err: err.message },
+        { provider: provider.name, err: lastError.message },
         "AI provider error, falling through",
       );
     }
@@ -417,7 +419,7 @@ export async function aiComplete(
 /**
  * Complete and parse JSON from the AI response.
  */
-export async function aiCompleteJSON<T = any>(
+export async function aiCompleteJSON<T = unknown>(
   systemPrompt: string,
   userPrompt: string,
   options: AIOptions = {},

@@ -1,14 +1,16 @@
 {
-  "name": "video",
+  "name": "@crypto-vision/video",
   "version": "1.0.0",
-  "description": "",
+  "description": "Remotion video: Give Your Agent Access to Money — x402 Gas Station",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts GasStation out/gas-station.mp4",
+    "render:gif": "remotion render src/index.ts GasStation out/gas-station.gif --image-format png"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "nirholas",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "@remotion/cli": "^4.0.432",

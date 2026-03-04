@@ -88,10 +88,10 @@ async function main() {
 
     // x402 analytics (optional — remove to run without paid intelligence)
     analyticsApiUrl: process.env.ANALYTICS_API_URL,
-    x402PrivateKey: process.env.X402_PRIVATE_KEY,
+    solanaPrivateKey: process.env.X402_SOLANA_PRIVATE_KEY,
 
     // Set to true to skip real payments (API must also be in dev mode)
-    devMode: !process.env.X402_PRIVATE_KEY,
+    devMode: !process.env.X402_SOLANA_PRIVATE_KEY,
   });
 
   // ─── Event Listeners ──────────────────────────────────────

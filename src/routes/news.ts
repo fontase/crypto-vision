@@ -23,7 +23,7 @@
  */
 
 import { Hono } from "hono";
-import { ApiError } from "../lib/api-error.js";
+import { ApiError, extractErrorMessage } from "../lib/api-error.js";
 import { log } from "../lib/logger.js";
 import { tryMultipleSources } from "../lib/fallback.js";
 import {
@@ -143,9 +143,10 @@ newsRoutes.get("/search", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 100);
     const data = await searchNews(q, limit);
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to search news");
-    return ApiError.internal(c, "Failed to search news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to search news");
+    return ApiError.internal(c, "Failed to search news", message);
   }
 });
 
@@ -156,9 +157,10 @@ newsRoutes.get("/bitcoin", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "bitcoin" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch bitcoin news");
-    return ApiError.internal(c, "Failed to fetch bitcoin news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch bitcoin news");
+    return ApiError.internal(c, "Failed to fetch bitcoin news", message);
   }
 });
 
@@ -169,9 +171,10 @@ newsRoutes.get("/defi", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "defi" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch defi news");
-    return ApiError.internal(c, "Failed to fetch defi news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch defi news");
+    return ApiError.internal(c, "Failed to fetch defi news", message);
   }
 });
 
@@ -182,9 +185,10 @@ newsRoutes.get("/breaking", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 10), 50);
     const data = await getBreakingNews(limit);
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch breaking news");
-    return ApiError.internal(c, "Failed to fetch breaking news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch breaking news");
+    return ApiError.internal(c, "Failed to fetch breaking news", message);
   }
 });
 
@@ -195,9 +199,10 @@ newsRoutes.get("/trending", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 10), 30);
     const data = await getTrending(limit);
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch trending topics");
-    return ApiError.internal(c, "Failed to fetch trending topics", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch trending topics");
+    return ApiError.internal(c, "Failed to fetch trending topics", message);
   }
 });
 
@@ -215,9 +220,10 @@ newsRoutes.get("/ethereum", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "ethereum" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch ethereum news");
-    return ApiError.internal(c, "Failed to fetch ethereum news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch ethereum news");
+    return ApiError.internal(c, "Failed to fetch ethereum news", message);
   }
 });
 
@@ -228,9 +234,10 @@ newsRoutes.get("/nft", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "nft" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch nft news");
-    return ApiError.internal(c, "Failed to fetch nft news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch nft news");
+    return ApiError.internal(c, "Failed to fetch nft news", message);
   }
 });
 
@@ -241,9 +248,10 @@ newsRoutes.get("/regulation", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "regulation" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch regulation news");
-    return ApiError.internal(c, "Failed to fetch regulation news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch regulation news");
+    return ApiError.internal(c, "Failed to fetch regulation news", message);
   }
 });
 
@@ -254,9 +262,10 @@ newsRoutes.get("/altcoins", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "altcoin" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch altcoin news");
-    return ApiError.internal(c, "Failed to fetch altcoin news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch altcoin news");
+    return ApiError.internal(c, "Failed to fetch altcoin news", message);
   }
 });
 
@@ -267,9 +276,10 @@ newsRoutes.get("/layer2", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "layer2" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch layer2 news");
-    return ApiError.internal(c, "Failed to fetch layer2 news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch layer2 news");
+    return ApiError.internal(c, "Failed to fetch layer2 news", message);
   }
 });
 
@@ -280,9 +290,10 @@ newsRoutes.get("/mining", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "mining" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch mining news");
-    return ApiError.internal(c, "Failed to fetch mining news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch mining news");
+    return ApiError.internal(c, "Failed to fetch mining news", message);
   }
 });
 
@@ -293,9 +304,10 @@ newsRoutes.get("/stablecoins", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "stablecoin" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch stablecoin news");
-    return ApiError.internal(c, "Failed to fetch stablecoin news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch stablecoin news");
+    return ApiError.internal(c, "Failed to fetch stablecoin news", message);
   }
 });
 
@@ -306,9 +318,10 @@ newsRoutes.get("/exchange", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNews({ limit, category: "exchange" });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch exchange news");
-    return ApiError.internal(c, "Failed to fetch exchange news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch exchange news");
+    return ApiError.internal(c, "Failed to fetch exchange news", message);
   }
 });
 
@@ -329,9 +342,10 @@ newsRoutes.get("/homepage", async (c) => {
       trendingLimit: Math.min(Number(c.req.query("trending") || 10), 50),
     });
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message }, "Failed to fetch homepage news");
-    return ApiError.internal(c, "Failed to fetch homepage news", err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message }, "Failed to fetch homepage news");
+    return ApiError.internal(c, "Failed to fetch homepage news", message);
   }
 });
 
@@ -343,8 +357,9 @@ newsRoutes.get("/category/:cat", async (c) => {
     const limit = Math.min(Number(c.req.query("limit") || 20), 50);
     const data = await getNewsByCategory(category, limit);
     return c.json(data);
-  } catch (err: any) {
-    log.error({ err: err.message, category }, "Failed to fetch category news");
-    return ApiError.internal(c, `Failed to fetch ${category} news`, err.message);
+  } catch (err: unknown) {
+    const message = extractErrorMessage(err);
+    log.error({ err: message, category }, "Failed to fetch category news");
+    return ApiError.internal(c, `Failed to fetch ${category} news`, message);
   }
 });

@@ -19,22 +19,18 @@ import { Hono } from 'hono';
 import {
   Connection,
   PublicKey,
-  type AccountInfo,
 } from '@solana/web3.js';
 import {
   getAssociatedTokenAddressSync,
   getAccount,
-  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { OnlinePumpSdk, getTokenPrice, getGraduationProgress, bondingCurvePda } from '@pump-fun/pump-sdk';
 import BN from 'bn.js';
-import type { X402PaymentContext } from '../api/x402-middleware.js';
-import type { X402EndpointConfig } from '../api/x402-middleware.js';
+import type { X402EndpointConfig } from '../x402-middleware.js';
 
 // ─── Constants ────────────────────────────────────────────────
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
-const ONE_BILLION = new BN('1000000000000000000'); // 1B with token decimals (9)
 
 // ─── Response Types ───────────────────────────────────────────
 // These match the types defined in x402/client.ts for client consumption.
@@ -288,7 +284,7 @@ function calculateRugScore(
  * Generate a trading signal based on on-chain metrics.
  */
 function generateTradingSignal(
-  priceSol: number,
+  _priceSol: number,
   graduationProgress: number,
   volumeSol: number,
   buySellRatio: number,
@@ -566,7 +562,7 @@ export function createPumpRoutes(config: PumpRoutesConfig): Hono {
     }
 
     try {
-      const bondingCurve = await sdk.fetchBondingCurve(mintPubkey);
+      const _bondingCurve = await sdk.fetchBondingCurve(mintPubkey);
       const topHolders = await fetchTopHolders(connection, mintPubkey, 20);
 
       // Detect snipers — holders who got in very early
@@ -653,7 +649,7 @@ export function createPumpRoutes(config: PumpRoutesConfig): Hono {
 
     try {
       const bondingCurve = await sdk.fetchBondingCurve(mintPubkey);
-      const priceSol = getTokenPrice(bondingCurve);
+      const currentPriceSol = getTokenPrice(bondingCurve);
       const graduationProgress = getGraduationProgress(bondingCurve);
       const topHolders = await fetchTopHolders(connection, mintPubkey);
 
@@ -666,8 +662,8 @@ export function createPumpRoutes(config: PumpRoutesConfig): Hono {
       const creatorHolder = topHolders.find((h) => h.address === creatorAddress);
       const creatorPercentage = creatorHolder?.percentage ?? 0;
 
-      // Top holder concentration
-      const topFiveConcentration = topHolders
+      // Top holder concentration — used in graduation factor calculation
+      const topFiveHolderConcentration = topHolders
         .slice(0, 5)
         .reduce((sum, h) => sum + h.percentage, 0);
 
@@ -677,14 +673,20 @@ export function createPumpRoutes(config: PumpRoutesConfig): Hono {
       const creatorReputation = 1 - Math.min(1, creatorPercentage / 50); // lower creator hold = better
       const socialSignals = 0.5; // placeholder — would need social API integration
       const bondingCurveProgressNorm = graduationProgress / 100;
+      // High concentration suppresses graduation probability (whale dump risk)
+      const concentrationPenalty = topFiveHolderConcentration > 60 ? 0.15 : topFiveHolderConcentration > 40 ? 0.07 : 0;
+      // Higher current price indicates more liquidity has flowed in
+      const priceSignal = Math.min(1, currentPriceSol / 0.001); // normalize — 0.001 SOL is ~graduation price
 
       // Probability model (weighted factors)
       const probability = Math.min(0.99, Math.max(0.01,
-        bondingCurveProgressNorm * 0.4 +
-        volumeMomentum * 0.25 +
+        bondingCurveProgressNorm * 0.35 +
+        volumeMomentum * 0.2 +
         holderGrowthRate * 0.15 +
         creatorReputation * 0.1 +
-        (tradeMetrics.buySellRatio > 1 ? 0.1 : 0),
+        priceSignal * 0.1 +
+        (tradeMetrics.buySellRatio > 1 ? 0.1 : 0) -
+        concentrationPenalty,
       ));
 
       // Confidence based on data quality

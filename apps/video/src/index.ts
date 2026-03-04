@@ -1,0 +1,7 @@
+/**
+ * Remotion entry point — registers the Root composition.
+ */
+import { registerRoot } from 'remotion';
+import { RemotionRoot } from './Root';
+
+registerRoot(RemotionRoot);

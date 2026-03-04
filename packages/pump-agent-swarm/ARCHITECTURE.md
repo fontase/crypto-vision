@@ -513,28 +513,12 @@ Typed finite state machine governing swarm lifecycle. See [Section 2](#2-swarm-l
 
 ## 8. x402 Analytics
 
-### Dual Implementation
+### Pure Solana x402 Implementation
 
-The package includes **two** x402 implementations for different networks:
+The package uses a **Solana-native x402 implementation** — no EVM, no facilitator.
+Direct on-chain USDC settlement in ~400ms via SPL transfer + Memo program.
 
-#### 8.1 EVM x402 Client (`analytics/x402-client.ts` — 336 lines)
-
-HTTP x402 auto-payment middleware for analytics API access.
-
-| Endpoint | Cost | Returns |
-|----------|------|---------|
-| `getTokenAnalytics(mint)` | $0.02 | Volume, holders, price history |
-| `getBondingCurveState(mint)` | $0.005 | Reserve balances, progress % |
-| `getNewLaunches(limit)` | $0.01 | Recent token launches |
-| `getTradingSignals(mint)` | $0.03 | Signal, confidence, reasoning |
-
-- Uses `ethers.js` for EIP-712 signature generation
-- Pays with Base USDC via facilitator contract
-- Budget tracking: per-session spend limits
-
-#### 8.2 Solana-Native x402 (`x402/` — 1,469 lines)
-
-Pure Solana x402 implementation (no EVM, no facilitator).
+#### 8.1 Protocol Layer (`x402/` — 1,469 lines)
 
 | Component | Purpose |
 |-----------|---------|
@@ -542,11 +526,38 @@ Pure Solana x402 implementation (no EVM, no facilitator).
 | `SolanaX402Server` (561 lines) | Server-side: 402 response generation, RPC payment verification |
 | Types (276 lines) | Constants (USDC mints, MEMO_PROGRAM_ID), interfaces |
 
+#### 8.2 API Server Layer (`api/`)
+
+| Component | Purpose |
+|-----------|---------|
+| `x402-middleware.ts` | Hono middleware — intercepts requests, enforces x402 payment flow |
+| `screener-server.ts` | Hono HTTP server with health, metrics, discovery, and premium routes |
+| `routes/pump.ts` | 6 premium endpoints using `OnlinePumpSdk` for real on-chain data |
+
+#### 8.3 Premium Endpoints
+
+| Endpoint | Cost | Returns |
+|----------|------|---------|
+| `GET /api/pump/analytics/:mint` | $0.02 | Full token analytics: bonding curve, holders, volume, rug score |
+| `GET /api/pump/curve/:mint` | $0.005 | Bonding curve reserves, graduation progress, price |
+| `GET /api/pump/whales/:mint` | $0.025 | Whale & sniper detection, risk level |
+| `GET /api/pump/graduation/:mint` | $0.015 | Graduation probability with contributing factors |
+| `GET /api/pump/signals/:mint` | $0.03 | AI buy/sell/hold signals with confidence |
+| `GET /api/pump/launches` | $0.01 | Recent token launches with basic analytics |
+
+#### 8.4 Free Endpoints
+
+| Endpoint | Purpose |
+|----------|---------||
+| `GET /healthz` | Health check |
+| `GET /metrics` | Revenue, payment count, active challenges |
+| `GET /.well-known/x402` | Discovery document (auto-detect pricing + payment config) |
+
 **Payment Flow**:
 ```
-Client → request → Server returns 402 + payment instructions
-Client → USDC transfer + memo(receipt) → Solana
-Client → retry request + payment proof → Server verifies on-chain → 200 + data
+Client → request → Server returns 402 + X-PAYMENT-REQUIRED (challenge)
+Client → USDC transfer + memo(challenge) → Solana (~400ms)
+Client → retry request + X-PAYMENT (proof) → Server verifies on-chain → 200 + data
 ```
 
 ---
@@ -654,11 +665,13 @@ interface SwarmMasterConfig {
 | **trading/** | `price-trajectory.ts` | 855 | Price path planning + execution |
 | **trading/** | `trade-scheduler.ts` | 651 | Priority queue trade coordination |
 | **trading/** | `position-manager.ts` | 987 | Cross-agent position tracking |
-| **analytics/** | `x402-client.ts` | 336 | EVM x402 analytics client |
 | **x402/** | `client.ts` | 590 | Solana-native x402 client |
 | **x402/** | `server.ts` | 561 | Solana-native x402 server |
 | **x402/** | `types.ts` | 276 | x402 constants and interfaces |
 | **x402/** | `index.ts` | 42 | Barrel exports |
+| **api/** | `x402-middleware.ts` | ~200 | Hono x402 payment middleware |
+| **api/** | `screener-server.ts` | ~280 | Hono screener API server |
+| **api/** | `routes/pump.ts` | ~560 | Premium Pump.fun route handlers |
 
 ---
 

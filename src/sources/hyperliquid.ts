@@ -141,16 +141,16 @@ export function getUserState(user: string): Promise<HLUserState> {
 
 // ─── L1 Stats ────────────────────────────────────────────────
 
-export function getL1Stats(): Promise<any> {
+export function getL1Stats(): Promise<Record<string, unknown>> {
   return cache.wrap("hl:l1", 60, () =>
-    hlPost<any>("l2Book", { coin: "BTC" })
+    hlPost<Record<string, unknown>>("l2Book", { coin: "BTC" })
   );
 }
 
 // ─── Open Orders ─────────────────────────────────────────────
 
-export function getOpenOrders(user: string): Promise<any[]> {
+export function getOpenOrders(user: string): Promise<Record<string, unknown>[]> {
   return cache.wrap(`hl:orders:${user}`, 15, () =>
-    hlPost<any[]>("openOrders", { user })
+    hlPost<Record<string, unknown>[]>("openOrders", { user })
   );
 }

@@ -249,7 +249,7 @@ export async function getETFPremiums(): Promise<{
 /**
  * ETF flow estimates from CoinGlass (requires COINGLASS_API_KEY).
  */
-export async function getETFFlows(asset: "BTC" | "ETH" = "BTC"): Promise<any> {
+export async function getETFFlows(asset: "BTC" | "ETH" = "BTC"): Promise<Record<string, unknown>> {
   const key = process.env.COINGLASS_API_KEY;
   if (!key) return { error: "COINGLASS_API_KEY not set", data: null };
 

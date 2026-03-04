@@ -50,30 +50,33 @@ export interface SocialProfile {
  */
 export async function getSocialProfile(id: string): Promise<SocialProfile> {
   return cache.wrap(`social:profile:${id}`, 300, async () => {
-    const coin = await fetchJSON<any>(
+    const coin = await fetchJSON<Record<string, unknown>>(
       `${CG_BASE}/coins/${id}?localization=false&tickers=false&market_data=false&community_data=true&developer_data=true&sparkline=false`,
       { headers: cgHeaders() },
     );
 
+    const communityData = (coin.community_data ?? {}) as Record<string, unknown>;
+    const developerData = (coin.developer_data ?? {}) as Record<string, unknown>;
+
     return {
-      id: coin.id,
-      name: coin.name,
-      symbol: coin.symbol,
-      twitterFollowers: coin.community_data?.twitter_followers ?? 0,
-      redditSubscribers: coin.community_data?.reddit_subscribers ?? 0,
-      redditActiveAccounts: coin.community_data?.reddit_accounts_active_48h ?? 0,
-      telegramChannelMembers: coin.community_data?.telegram_channel_user_count ?? 0,
-      githubForks: coin.developer_data?.forks ?? 0,
-      githubStars: coin.developer_data?.stars ?? 0,
-      githubSubscribers: coin.developer_data?.subscribers ?? 0,
-      githubTotalIssues: coin.developer_data?.total_issues ?? 0,
-      githubClosedIssues: coin.developer_data?.closed_issues ?? 0,
-      githubPullRequestsMerged: coin.developer_data?.pull_requests_merged ?? 0,
-      githubCommitCount4Weeks: coin.developer_data?.commit_count_4_weeks ?? 0,
-      devScore: coin.developer_score ?? 0,
-      communityScore: coin.community_score ?? 0,
-      sentimentVotesUpPercentage: coin.sentiment_votes_up_percentage ?? 0,
-      sentimentVotesDownPercentage: coin.sentiment_votes_down_percentage ?? 0,
+      id: coin.id as string,
+      name: coin.name as string,
+      symbol: coin.symbol as string,
+      twitterFollowers: (communityData.twitter_followers as number) ?? 0,
+      redditSubscribers: (communityData.reddit_subscribers as number) ?? 0,
+      redditActiveAccounts: (communityData.reddit_accounts_active_48h as number) ?? 0,
+      telegramChannelMembers: (communityData.telegram_channel_user_count as number) ?? 0,
+      githubForks: (developerData.forks as number) ?? 0,
+      githubStars: (developerData.stars as number) ?? 0,
+      githubSubscribers: (developerData.subscribers as number) ?? 0,
+      githubTotalIssues: (developerData.total_issues as number) ?? 0,
+      githubClosedIssues: (developerData.closed_issues as number) ?? 0,
+      githubPullRequestsMerged: (developerData.pull_requests_merged as number) ?? 0,
+      githubCommitCount4Weeks: (developerData.commit_count_4_weeks as number) ?? 0,
+      devScore: (coin.developer_score as number) ?? 0,
+      communityScore: (coin.community_score as number) ?? 0,
+      sentimentVotesUpPercentage: (coin.sentiment_votes_up_percentage as number) ?? 0,
+      sentimentVotesDownPercentage: (coin.sentiment_votes_down_percentage as number) ?? 0,
     };
   });
 }
@@ -102,7 +105,7 @@ function ccHeaders(): Record<string, string> {
 /**
  * CryptoCompare social stats (Twitter, Reddit, Facebook, code repos).
  */
-export function getCryptoCompareSocial(coinId: number): Promise<any> {
+export function getCryptoCompareSocial(coinId: number): Promise<Record<string, unknown>> {
   return cache.wrap(`social:cc:${coinId}`, 600, () =>
     fetchJSON(`${CC_BASE}/social/coin/latest?coinId=${coinId}`, {
       headers: ccHeaders(),
@@ -117,7 +120,7 @@ export function getCryptoCompareSocialHistory(
   coinId: number,
   aggregate = 1,
   limit = 30,
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   return cache.wrap(`social:cc:history:${coinId}:${aggregate}:${limit}`, 600, () =>
     fetchJSON(
       `${CC_BASE}/social/coin/histo/day?coinId=${coinId}&aggregate=${aggregate}&limit=${limit}`,
@@ -155,7 +158,7 @@ export interface LunarMetrics {
 /**
  * LunarCrush coin metrics (Galaxy Score, AltRank, social volume).
  */
-export function getLunarMetrics(symbol: string): Promise<any> {
+export function getLunarMetrics(symbol: string): Promise<Record<string, unknown>> {
   return cache.wrap(`social:lunar:${symbol}`, 300, () =>
     fetchJSON(`${LUNAR_BASE}/coins/${symbol}/v1`, {
       headers: lunarHeaders(),
@@ -166,7 +169,7 @@ export function getLunarMetrics(symbol: string): Promise<any> {
 /**
  * LunarCrush top coins by social volume.
  */
-export function getLunarTopCoins(sort = "galaxy_score", limit = 50): Promise<any> {
+export function getLunarTopCoins(sort = "galaxy_score", limit = 50): Promise<Record<string, unknown>> {
   return cache.wrap(`social:lunar:top:${sort}:${limit}`, 300, () =>
     fetchJSON(`${LUNAR_BASE}/coins/list/v2?sort=${sort}&limit=${limit}`, {
       headers: lunarHeaders(),
@@ -177,7 +180,7 @@ export function getLunarTopCoins(sort = "galaxy_score", limit = 50): Promise<any
 /**
  * LunarCrush social feed / posts.
  */
-export function getLunarFeed(symbol: string, limit = 20): Promise<any> {
+export function getLunarFeed(symbol: string, limit = 20): Promise<Record<string, unknown>> {
   return cache.wrap(`social:lunar:feed:${symbol}:${limit}`, 120, () =>
     fetchJSON(`${LUNAR_BASE}/coins/${symbol}/feeds/v1?limit=${limit}`, {
       headers: lunarHeaders(),
@@ -198,7 +201,7 @@ export interface FearGreedData {
 /**
  * Current Fear & Greed Index value.
  */
-export function getFearGreed(days = 1): Promise<any> {
+export function getFearGreed(days = 1): Promise<Record<string, unknown>> {
   return cache.wrap(`social:feargreed:${days}`, 300, () =>
     fetchJSON(`${FG_API}/?limit=${days}&format=json`),
   );
@@ -207,7 +210,7 @@ export function getFearGreed(days = 1): Promise<any> {
 /**
  * Fear & Greed history (up to 365 days).
  */
-export function getFearGreedHistory(limit = 30): Promise<any> {
+export function getFearGreedHistory(limit = 30): Promise<Record<string, unknown>> {
   return cache.wrap(`social:feargreed:history:${limit}`, 600, () =>
     fetchJSON(`${FG_API}/?limit=${limit}&format=json`),
   );

@@ -316,7 +316,7 @@ researchRoutes.get("/histoday/:symbol", async (c) => {
   const result = await cc.getHistoDay(symbol, tsym, limit);
 
   return c.json({
-    data: (result.Data?.Data || []).map((d: any) => ({
+    data: (result.Data?.Data || []).map((d: { time: number; open: number; high: number; low: number; close: number; volumefrom: number; volumeto: number }) => ({
       time: d.time,
       date: new Date(d.time * 1000).toISOString().split("T")[0],
       open: d.open,
@@ -343,7 +343,7 @@ researchRoutes.get("/histohour/:symbol", async (c) => {
   const result = await cc.getHistoHour(symbol, tsym, limit);
 
   return c.json({
-    data: (result.Data?.Data || []).map((d: any) => ({
+    data: (result.Data?.Data || []).map((d: { time: number; open: number; high: number; low: number; close: number; volumefrom: number; volumeto: number }) => ({
       time: d.time,
       date: new Date(d.time * 1000).toISOString(),
       open: d.open,
@@ -369,7 +369,7 @@ researchRoutes.get("/top-mcap", async (c) => {
   const { Data } = await cc.getTopByMarketCap(tsym, limit);
 
   return c.json({
-    data: (Data || []).map((item: any) => ({
+    data: (Data || []).map((item: { CoinInfo?: { Id?: string; Name?: string; FullName?: string; ImageUrl?: string; Algorithm?: string }; RAW?: Record<string, { PRICE?: number; MKTCAP?: number; VOLUME24HOUR?: number; CHANGEPCT24HOUR?: number; SUPPLY?: number }> }) => ({
       id: item.CoinInfo?.Id,
       name: item.CoinInfo?.Name,
       fullName: item.CoinInfo?.FullName,
@@ -394,7 +394,7 @@ researchRoutes.get("/news/categories", async (c) => {
   const { Data } = await cc.getNewsCategories();
 
   return c.json({
-    data: (Data || []).map((cat: any) => ({
+    data: (Data || []).map((cat: { categoryName: string; wordsAssociatedWithCategory?: string }) => ({
       name: cat.categoryName,
       keywords: cat.wordsAssociatedWithCategory?.split("|").slice(0, 10),
     })),
@@ -410,7 +410,7 @@ researchRoutes.get("/blockchains", async (c) => {
   const { Data } = await cc.getBlockchainAvailable();
 
   return c.json({
-    data: Object.entries(Data || {}).map(([symbol, info]: [string, any]) => ({
+    data: Object.entries(Data || {}).map(([symbol, info]: [string, { id?: string; data_available_from_ts?: number }]) => ({
       symbol,
       id: info.id,
       dataAvailableFrom: info.data_available_from_ts
@@ -431,7 +431,7 @@ researchRoutes.get("/search", async (c) => {
   const { data } = await messari.searchAssets(q);
 
   return c.json({
-    data: (data || []).map((a: any) => ({
+    data: (data || []).map((a: { id?: string; symbol?: string; name?: string; slug?: string }) => ({
       id: a.id,
       symbol: a.symbol,
       name: a.name,

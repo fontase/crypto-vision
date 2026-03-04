@@ -103,7 +103,7 @@ export function getCollectionActivity(
 export function getCollectionStats(
   collectionId: string,
   chain = "ethereum",
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   return cache.wrap(`nft:stats:${chain}:${collectionId}`, 120, () =>
     fetchJSON(`${RESERVOIR_BASE}/collections/v7?id=${collectionId}&chain=${chain}&includeMintStages=true&includeSecurityConfigs=true`, {
       headers: reservoirHeaders(),
@@ -118,7 +118,7 @@ export function getTrendingCollections(
   chain = "ethereum",
   period = "1d",
   limit = 50,
-): Promise<{ collections: any[] }> {
+): Promise<{ collections: Record<string, unknown>[] }> {
   return cache.wrap(`nft:trending:${chain}:${period}:${limit}`, 120, () =>
     fetchJSON(`${RESERVOIR_BASE}/collections/trending/v1?chain=${chain}&period=${period}&limit=${limit}`, {
       headers: reservoirHeaders(),
@@ -133,7 +133,7 @@ export function searchCollections(
   query: string,
   chain = "ethereum",
   limit = 20,
-): Promise<{ collections: any[] }> {
+): Promise<{ collections: Record<string, unknown>[] }> {
   return cache.wrap(`nft:search:${chain}:${query}:${limit}`, 120, () =>
     fetchJSON(`${RESERVOIR_BASE}/search/collections/v2?name=${encodeURIComponent(query)}&chain=${chain}&limit=${limit}`, {
       headers: reservoirHeaders(),
@@ -148,7 +148,7 @@ export function getCollectionBids(
   collectionId: string,
   chain = "ethereum",
   limit = 20,
-): Promise<{ orders: any[] }> {
+): Promise<{ orders: Record<string, unknown>[] }> {
   return cache.wrap(`nft:bids:${chain}:${collectionId}:${limit}`, 60, () =>
     fetchJSON(`${RESERVOIR_BASE}/orders/bids/v6?collection=${collectionId}&chain=${chain}&limit=${limit}&sortBy=price`, {
       headers: reservoirHeaders(),
@@ -163,7 +163,7 @@ export function getCollectionListings(
   collectionId: string,
   chain = "ethereum",
   limit = 20,
-): Promise<{ orders: any[] }> {
+): Promise<{ orders: Record<string, unknown>[] }> {
   return cache.wrap(`nft:listings:${chain}:${collectionId}:${limit}`, 60, () =>
     fetchJSON(`${RESERVOIR_BASE}/orders/asks/v5?collection=${collectionId}&chain=${chain}&limit=${limit}&sortBy=price`, {
       headers: reservoirHeaders(),
@@ -178,7 +178,7 @@ export function getUserNFTs(
   userAddress: string,
   chain = "ethereum",
   limit = 50,
-): Promise<{ tokens: any[] }> {
+): Promise<{ tokens: Record<string, unknown>[] }> {
   return cache.wrap(`nft:user:${chain}:${userAddress}:${limit}`, 120, () =>
     fetchJSON(`${RESERVOIR_BASE}/users/${userAddress}/tokens/v10?chain=${chain}&limit=${limit}`, {
       headers: reservoirHeaders(),
@@ -193,7 +193,7 @@ const LLAMA_NFT_BASE = "https://api.llama.fi";
 /**
  * NFT marketplace overview from DeFi Llama.
  */
-export function getNFTMarketplaces(): Promise<any> {
+export function getNFTMarketplaces(): Promise<Record<string, unknown>> {
   return cache.wrap("nft:marketplaces", 300, () =>
     fetchJSON(`${LLAMA_NFT_BASE}/overview/nfts`),
   );
@@ -202,7 +202,7 @@ export function getNFTMarketplaces(): Promise<any> {
 /**
  * NFT collection chart (DeFi Llama protocol endpoint).
  */
-export function getNFTCollectionChart(slug: string): Promise<any> {
+export function getNFTCollectionChart(slug: string): Promise<Record<string, unknown>> {
   return cache.wrap(`nft:chart:${slug}`, 600, () =>
     fetchJSON(`${LLAMA_NFT_BASE}/protocol/${slug}`),
   );
@@ -211,7 +211,7 @@ export function getNFTCollectionChart(slug: string): Promise<any> {
 /**
  * NFT chains breakdown from DeFi Llama.
  */
-export function getNFTChains(): Promise<any> {
+export function getNFTChains(): Promise<Record<string, unknown>> {
   return cache.wrap("nft:chains", 300, () =>
     fetchJSON(`${LLAMA_NFT_BASE}/overview/nfts?dataType=dailyVolume`),
   );
@@ -229,7 +229,7 @@ function cgHeaders(): Record<string, string> {
 /**
  * CoinGecko NFT list.
  */
-export function getNFTList(perPage = 100, page = 1): Promise<any[]> {
+export function getNFTList(perPage = 100, page = 1): Promise<Record<string, unknown>[]> {
   return cache.wrap(`nft:cg:list:${perPage}:${page}`, 600, () =>
     fetchJSON(`${CG_BASE}/nfts/list?per_page=${perPage}&page=${page}`, {
       headers: cgHeaders(),
@@ -240,7 +240,7 @@ export function getNFTList(perPage = 100, page = 1): Promise<any[]> {
 /**
  * CoinGecko NFT detail by ID.
  */
-export function getNFTDetail(id: string): Promise<any> {
+export function getNFTDetail(id: string): Promise<Record<string, unknown>> {
   return cache.wrap(`nft:cg:detail:${id}`, 300, () =>
     fetchJSON(`${CG_BASE}/nfts/${id}`, {
       headers: cgHeaders(),
@@ -251,7 +251,7 @@ export function getNFTDetail(id: string): Promise<any> {
 /**
  * CoinGecko NFT market chart.
  */
-export function getNFTMarketChart(id: string, days = 30): Promise<any> {
+export function getNFTMarketChart(id: string, days = 30): Promise<Record<string, unknown>> {
   return cache.wrap(`nft:cg:chart:${id}:${days}`, 600, () =>
     fetchJSON(`${CG_BASE}/nfts/${id}/market_chart?days=${days}`, {
       headers: cgHeaders(),
@@ -262,11 +262,11 @@ export function getNFTMarketChart(id: string, days = 30): Promise<any> {
 /**
  * CoinGecko trending NFTs.
  */
-export function getTrendingNFTs(): Promise<any> {
+export function getTrendingNFTs(): Promise<Record<string, unknown>[]> {
   return cache.wrap("nft:cg:trending", 300, async () => {
-    const data = await fetchJSON<any>(`${CG_BASE}/search/trending`, {
+    const data = await fetchJSON<Record<string, unknown>>(`${CG_BASE}/search/trending`, {
       headers: cgHeaders(),
     });
-    return data.nfts || [];
+    return (data.nfts as Record<string, unknown>[]) || [];
   });
 }

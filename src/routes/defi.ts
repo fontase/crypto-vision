@@ -377,9 +377,9 @@ defiRoutes.get("/options-volume", async (c) => {
         volume: vol,
       })),
       protocols: (data.protocols || [])
-        .sort((a: any, b: any) => (b.total24h || 0) - (a.total24h || 0))
+        .sort((a: { total24h?: number }, b: { total24h?: number }) => (b.total24h || 0) - (a.total24h || 0))
         .slice(0, 30)
-        .map((p: any) => ({
+        .map((p: { name: string; total24h?: number; total7d?: number; total30d?: number; change_1d?: number }) => ({
           name: p.name,
           volume24h: p.total24h,
           volume7d: p.total7d,
@@ -405,9 +405,9 @@ defiRoutes.get("/derivatives-volume", async (c) => {
         volume: vol,
       })),
       protocols: (data.protocols || [])
-        .sort((a: any, b: any) => (b.total24h || 0) - (a.total24h || 0))
+        .sort((a: { total24h?: number }, b: { total24h?: number }) => (b.total24h || 0) - (a.total24h || 0))
         .slice(0, 30)
-        .map((p: any) => ({
+        .map((p: { name: string; total24h?: number; total7d?: number; total30d?: number; change_1d?: number }) => ({
           name: p.name,
           volume24h: p.total24h,
           volume7d: p.total7d,
@@ -427,7 +427,7 @@ defiRoutes.get("/defi-liquidations", async (c) => {
   const data = await llama.getLiquidations();
 
   return c.json({
-    data: (data || []).map((item: any) => ({
+    data: (data || []).map((item: { symbol?: string; openInterest?: number; liquidations24h?: number }) => ({
       symbol: item.symbol,
       openInterest: item.openInterest,
       liquidations24h: item.liquidations24h,

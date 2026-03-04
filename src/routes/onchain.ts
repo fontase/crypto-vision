@@ -448,7 +448,7 @@ onchainRoutes.get("/bitcoin/price-chart", async (c) => {
       name: chart.name,
       unit: chart.unit,
       period: chart.period,
-      values: (chart.values || []).map((v: any) => ({
+      values: (chart.values || []).map((v: { x: number; y: number }) => ({
         timestamp: v.x,
         date: new Date(v.x * 1000).toISOString(),
         price: v.y,

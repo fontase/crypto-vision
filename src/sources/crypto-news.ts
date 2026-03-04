@@ -195,8 +195,8 @@ async function fetchSourceRSS(source: NewsSource): Promise<Article[]> {
 
     const xml = await res.text();
     return parseRSS(xml, source);
-  } catch (err: any) {
-    log.warn({ source: source.id, err: err.message }, "RSS fetch error");
+  } catch (err: unknown) {
+    log.warn({ source: source.id, err: err instanceof Error ? err.message : String(err) }, "RSS fetch error");
     return [];
   }
 }

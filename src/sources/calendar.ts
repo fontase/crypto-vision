@@ -68,7 +68,7 @@ export function getCoinEvents(
 /**
  * Event categories (mainnet launch, airdrop, burn, partnership, etc.).
  */
-export function getCategories(): Promise<{ body: any[] }> {
+export function getCategories(): Promise<{ body: Record<string, unknown>[] }> {
   return cache.wrap("calendar:categories", 3600, () =>
     fetchJSON(`${CMC_BASE}/categories`, { headers: cmcHeaders() }),
   );
@@ -92,7 +92,7 @@ export function getEventsByCategory(
 /**
  * Coins with upcoming events.
  */
-export function getCoinsWithEvents(): Promise<{ body: any[] }> {
+export function getCoinsWithEvents(): Promise<{ body: Record<string, unknown>[] }> {
   return cache.wrap("calendar:coins", 600, () =>
     fetchJSON(`${CMC_BASE}/coins`, { headers: cmcHeaders() }),
   );
@@ -105,7 +105,7 @@ const PAPRIKA = "https://api.coinpaprika.com/v1";
 /**
  * Events for a coin from CoinPaprika.
  */
-export function getPaprikaEvents(coinId: string): Promise<any[]> {
+export function getPaprikaEvents(coinId: string): Promise<Record<string, unknown>[]> {
   return cache.wrap(`calendar:paprika:${coinId}`, 600, () =>
     fetchJSON(`${PAPRIKA}/coins/${coinId}/events`),
   );

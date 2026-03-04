@@ -120,7 +120,7 @@ gasRoutes.get("/eth/token/:address/holders", async (c) => {
   const data = await evm.getERC20TopHolders(address);
 
   return c.json({
-    data: (data.result || []).map((h: any) => ({
+    data: (data.result || []).map((h: { TokenHolderAddress: string; TokenHolderQuantity: string; percentage?: number }) => ({
       address: h.TokenHolderAddress,
       quantity: h.TokenHolderQuantity,
       percentage: h.percentage,

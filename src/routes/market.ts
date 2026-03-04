@@ -1060,7 +1060,7 @@ marketRoutes.get("/paprika/coin/:id/ohlcv", async (c) => {
   const data = await alt.getCoinPaprikaOHLCV(id);
 
   return c.json({
-    data: (data || []).map((d: any) => ({
+    data: (data || []).map((d: { time_open: string; time_close: string; open: number; high: number; low: number; close: number; volume: number; market_cap: number }) => ({
       timeOpen: d.time_open,
       timeClose: d.time_close,
       open: d.open,
@@ -1083,7 +1083,7 @@ marketRoutes.get("/paprika/exchanges", async (c) => {
   const data = await alt.getCoinPaprikaExchanges();
 
   return c.json({
-    data: (data || []).filter((e: any) => e.active).map((e: any) => ({
+    data: (data || []).filter((e: { active: boolean }) => e.active).map((e: { id: string; name: string; quotes?: { USD?: { reported_volume_24h?: number; adjusted_volume_24h?: number } }; last_updated: string }) => ({
       id: e.id,
       name: e.name,
       reportedVolume24h: e.quotes?.USD?.reported_volume_24h,
@@ -1103,7 +1103,7 @@ marketRoutes.get("/paprika/coin/:id/events", async (c) => {
   const data = await alt.getCoinPaprikaEvents(id);
 
   return c.json({
-    data: (data || []).map((ev: any) => ({
+    data: (data || []).map((ev: { id: string; date: string; name: string; description: string; is_conference: boolean; link: string }) => ({
       id: ev.id,
       date: ev.date,
       name: ev.name,
@@ -1127,7 +1127,7 @@ marketRoutes.get("/dex/pairs/:chain", async (c) => {
   const data = await alt.dexPairsByChain(chain);
 
   return c.json({
-    data: (data.pairs || []).slice(0, 50).map((p: any) => ({
+    data: (data.pairs || []).slice(0, 50).map((p: { pairAddress: string; baseToken: unknown; quoteToken: unknown; priceUsd: string; volume?: { h24?: number }; liquidity?: { usd?: number }; fdv?: number; txns?: { h24?: unknown } }) => ({
       pairAddress: p.pairAddress,
       baseToken: p.baseToken,
       quoteToken: p.quoteToken,

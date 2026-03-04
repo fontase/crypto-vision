@@ -17,7 +17,7 @@ import { timing } from "hono/timing";
 
 import { logger as log } from "@/lib/logger";
 // Validate env vars at startup — must be early so we fail fast on bad config
-import { ApiError } from "@/lib/api-error";
+import { ApiError, extractErrorMessage } from "@/lib/api-error";
 import { apiKeyAuth } from "@/lib/auth";
 import { cache } from "@/lib/cache";
 import "@/lib/env";
@@ -229,8 +229,8 @@ app.get("/api/ready", async (c) => {
       checks.redis = val === "pong"
         ? { status: "ok", latencyMs }
         : { status: "degraded", latencyMs, error: "read-back mismatch" };
-    } catch (err: any) {
-      checks.redis = { status: "fail", error: err.message };
+    } catch (err: unknown) {
+      checks.redis = { status: "fail", error: extractErrorMessage(err) };
     }
   } else if (process.env.REDIS_URL) {
     // Redis is configured but not connected

@@ -60,37 +60,45 @@ interface YFQuote {
 
 async function fetchSymbol(symbol: string): Promise<YFQuote | null> {
   try {
-    const data = await fetchJSON<any>(
+    const data = await fetchJSON<Record<string, unknown>>(
       `${BASE}/${encodeURIComponent(symbol)}?interval=1d&range=5d`,
       { timeout: 8000 },
     );
 
-    const result = data.chart?.result?.[0];
+    const chart = data.chart as Record<string, unknown> | undefined;
+    const results = chart?.result as Record<string, unknown>[] | undefined;
+    const result = results?.[0];
     if (!result) return null;
 
-    const meta = result.meta;
-    const quotes = result.indicators?.quote?.[0];
-    const timestamps = result.timestamp;
+    const meta = result.meta as Record<string, unknown> | undefined;
+    const indicators = result.indicators as Record<string, unknown> | undefined;
+    const quotesArr = indicators?.quote as Record<string, unknown>[] | undefined;
+    const quotes = quotesArr?.[0];
+    const timestamps = result.timestamp as number[] | undefined;
 
     if (!meta || !quotes || !timestamps) return null;
 
     const lastIdx = timestamps.length - 1;
     const prevIdx = Math.max(0, lastIdx - 1);
-    const price = meta.regularMarketPrice || quotes.close?.[lastIdx];
-    const prevClose = quotes.close?.[prevIdx] || meta.previousClose || price;
+    const closeArr = quotes.close as number[] | undefined;
+    const highArr = quotes.high as number[] | undefined;
+    const lowArr = quotes.low as number[] | undefined;
+    const volumeArr = quotes.volume as number[] | undefined;
+    const price = (meta.regularMarketPrice as number) || closeArr?.[lastIdx] || 0;
+    const prevClose = closeArr?.[prevIdx] || (meta.previousClose as number) || price;
     const change = price - prevClose;
     const changePercent = prevClose ? (change / prevClose) * 100 : 0;
 
     return {
       symbol,
-      name: meta.shortName || meta.symbol || symbol,
+      name: (meta.shortName as string) || (meta.symbol as string) || symbol,
       price,
       previousClose: prevClose,
       change: Math.round(change * 100) / 100,
       changePercent: Math.round(changePercent * 100) / 100,
-      dayHigh: meta.regularMarketDayHigh || quotes.high?.[lastIdx] || 0,
-      dayLow: meta.regularMarketDayLow || quotes.low?.[lastIdx] || 0,
-      volume: meta.regularMarketVolume || quotes.volume?.[lastIdx] || 0,
+      dayHigh: (meta.regularMarketDayHigh as number) || highArr?.[lastIdx] || 0,
+      dayLow: (meta.regularMarketDayLow as number) || lowArr?.[lastIdx] || 0,
+      volume: (meta.regularMarketVolume as number) || volumeArr?.[lastIdx] || 0,
       timestamp: (timestamps[lastIdx] || 0) * 1000,
     };
   } catch {

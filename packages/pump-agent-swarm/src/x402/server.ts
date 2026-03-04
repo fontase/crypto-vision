@@ -17,7 +17,7 @@ import {
   Connection,
   PublicKey,
 } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import '@solana/spl-token';
 import {
   USDC_MINT_MAINNET,
   USDC_MINT_DEVNET,
@@ -28,7 +28,6 @@ import {
 } from './types.js';
 import type {
   SolanaX402PaymentRequired,
-  SolanaPaymentScheme,
   SolanaX402PaymentProof,
   SolanaX402ServerConfig,
   PaymentVerificationResult,
