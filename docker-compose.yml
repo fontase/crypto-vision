@@ -43,8 +43,11 @@ services:
       - NODE_ENV=production
       - PORT=8080
       - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgresql://sectbot:sectbot@postgres:5432/sectbot
     depends_on:
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
@@ -57,6 +60,28 @@ services:
         limits:
           memory: 2G
           cpus: "4.0"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: sectbot
+      POSTGRES_USER: sectbot
+      POSTGRES_PASSWORD: sectbot
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sectbot"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
     restart: unless-stopped
 
   # Lightweight cron — replaces Cloud Scheduler for non-GCP deploys.
@@ -83,4 +108,6 @@ services:
 
 volumes:
   redis-data:
+    driver: local
+  postgres-data:
     driver: local

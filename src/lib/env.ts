@@ -142,6 +142,11 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
 
+  // Sect Bot — Telegram bot
+  TELEGRAM_BOT_TOKEN: z.string().optional(),
+  DATABASE_URL: z.string().optional(),
+  SECTBOT_ENABLED: z.string().default("false"),
+
   // GCP / BigQuery / AI platform
   GCP_PROJECT_ID: z.string().optional(),
   GCP_REGION: z.string().default("us-central1"),

@@ -13,6 +13,7 @@
 import {
   Connection,
   Keypair,
+  PublicKey,
   Transaction,
   ComputeBudgetProgram,
   sendAndConfirmTransaction,
@@ -46,7 +47,7 @@ interface CreatorAgentEvents {
 export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
   private readonly connection: Connection;
   private readonly wallet: AgentWallet;
-  private readonly onlineSdk: OnlinePumpSdk;
+  private onlineSdk: OnlinePumpSdk | null = null;
 
   constructor(
     rpcUrl: string,
@@ -55,7 +56,13 @@ export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
     super();
     this.connection = new Connection(rpcUrl, 'confirmed');
     this.wallet = wallet;
-    this.onlineSdk = new OnlinePumpSdk(this.connection);
+  }
+
+  private getOnlineSdk(): OnlinePumpSdk {
+    if (!this.onlineSdk) {
+      this.onlineSdk = new OnlinePumpSdk(this.connection);
+    }
+    return this.onlineSdk;
   }
 
   /**
@@ -89,7 +96,7 @@ export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
       // Build create instructions — use createV2AndBuyInstructions for atomic dev buy
       let createIxs;
       if (bundle.devBuyLamports.gtn(0)) {
-        const global = await this.onlineSdk.fetchGlobal();
+        const global = await this.getOnlineSdk().fetchGlobal();
         createIxs = await PUMP_SDK.createV2AndBuyInstructions({
           global,
           creator: creatorPubkey,
@@ -151,8 +158,8 @@ export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
       };
 
       // Resolve creator's token account
-      const { getAssociatedTokenAddress } = await import('@solana/spl-token');
-      const ata = await getAssociatedTokenAddress(mintKeypair.publicKey, creatorPubkey);
+      const { getAssociatedTokenAddress: getAta } = await import('@solana/spl-token');
+      const ata = await getAta(mintKeypair.publicKey, creatorPubkey);
       result.creatorTokenAccount = ata.toBase58();
 
       // Check token balance to determine dev buy tokens received
@@ -192,16 +199,15 @@ export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
 
     this.emit('bundle:started', bundle.bundleWallets.length);
     const signatures: string[] = [];
-    const { PublicKey } = await import('@solana/web3.js');
     const mintPubkey = new PublicKey(mint);
 
     // Fetch global state once (shared across all buys)
-    const global = await this.onlineSdk.fetchGlobal();
+    const global = await this.getOnlineSdk().fetchGlobal();
 
     for (const { wallet, amountLamports } of bundle.bundleWallets) {
       try {
         // Fetch buy state (bonding curve + user ATA) for this buyer
-        const buyState = await this.onlineSdk.fetchBuyState(
+        const buyState = await this.getOnlineSdk().fetchBuyState(
           mintPubkey,
           wallet.keypair.publicKey,
           TOKEN_PROGRAM_ID,
@@ -251,7 +257,6 @@ export class CreatorAgent extends EventEmitter<CreatorAgentEvents> {
    * Fetch the current bonding curve state for a token.
    */
   async getBondingCurveState(mint: string): Promise<BondingCurveState> {
-    const { PublicKey } = await import('@solana/web3.js');
     const mintPubkey = new PublicKey(mint);
     const bondingCurvePdaKey = bondingCurvePda(mintPubkey);
 

@@ -6,6 +6,7 @@
  */
 
 import type { Keypair } from '@solana/web3.js';
+// PublicKey and TransactionInstruction used transitively by pump-sdk types
 import type BN from 'bn.js';
 
 // ─── Wallet Types ─────────────────────────────────────────────

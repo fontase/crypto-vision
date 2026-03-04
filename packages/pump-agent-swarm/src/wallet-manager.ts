@@ -13,6 +13,7 @@ import {
   sendAndConfirmTransaction,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
+// PublicKey imported dynamically only when needed
 import BN from 'bn.js';
 import bs58 from 'bs58';
 import type { AgentWallet, WalletPool } from './types.js';

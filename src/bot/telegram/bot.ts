@@ -7,19 +7,18 @@
  * @copyright 2024-2026 nirholas. All rights reserved.
  */
 
-import { Bot, Context, InlineKeyboard, session } from "grammy";
+import { Bot, Context, InlineKeyboard, InputFile } from "grammy";
 import { logger } from "@/lib/logger";
 import { findOrCreateUser, getUserByUsername, calculateWinRate, calculateAvgGain, getTopCalls, refreshUserStats, setUserBlockedInGroup, getUserCallCount24h } from "../services/user-service.js";
 import { findOrCreateGroup, getGroupByTelegramId, updateGroupSettings, upsertGroupMember, wipeLeaderboard, resetGroupSettings, isGroupPremium, getMaxCallsForGroup } from "../services/group-service.js";
 import { createCall, getRecentCalls, getUserCalls, getAlphaCalls, getGambleCalls, getCallById } from "../services/call-service.js";
 import { getCallsLeaderboard, getPerformanceLeaderboard, getLosersLeaderboard, getUserWinRateInGroup, getGroupStats } from "../services/leaderboard-service.js";
-import { getTokenData, parseTokenInput, type TokenData } from "../services/token-data.js";
+import { getTokenData, parseTokenInput, formatMarketCap, type TokenData } from "../services/token-data.js";
 import { generatePnlCard, generateGroupPnlCard, generateRankCard } from "../services/pnl-card.js";
-import { getPremiumStatus } from "../services/premium-service.js";
+import { getPremiumStatus, getActiveButtonAds, recordAdImpression } from "../services/premium-service.js";
 import { getReferralStats, requestReferral } from "../services/referral-service.js";
 import { getHardcoreStats, startHardcoreRound, getActiveSession } from "../services/hardcore-service.js";
 import { registerCallChannel, verifyCallChannel, getGroupCallChannels, canForwardToChannel } from "../services/channel-service.js";
-import { getActiveButtonAds, recordAdImpression } from "../services/premium-service.js";
 import {
   formatSimpleCallMessage,
   formatAdvancedCallMessage,
@@ -35,7 +34,6 @@ import {
   formatPremiumStatus,
   escapeHtml,
 } from "../messages/formatter.js";
-import type { InputFile } from "grammy/types";
 
 const log = logger.child({ module: "sectbot:bot" });
 

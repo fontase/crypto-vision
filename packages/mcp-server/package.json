@@ -1,0 +1,22 @@
+{
+  "name": "@crypto-vision/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for crypto-vision — cryptocurrency intelligence tools",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "@solana/web3.js": "^1.95.0",
+    "bn.js": "^5.2.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}

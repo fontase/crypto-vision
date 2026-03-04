@@ -83,6 +83,7 @@ import { stakingRoutes } from "@/routes/staking";
 import { unlocksRoutes } from "@/routes/unlocks";
 import { whaleRoutes } from "@/routes/whales";
 import { createWsRoutes } from "@/routes/ws";
+import { sectbotRoutes } from "@/routes/sectbot";
 
 // ─── App ─────────────────────────────────────────────────────
 
@@ -734,6 +735,7 @@ app.route("/api/news-feed", newsFeedRoutes);
 app.route("/api/anomalies", anomalyRoutes);
 app.route("/api/search", searchRoutes);
 app.route("/api/admin/export", exportRoutes);
+app.route("/api/sectbot", sectbotRoutes);
 app.route("/", keysRoutes);
 
 // ─── Metrics Summary (JSON) ──────────────────────────────────
@@ -773,6 +775,9 @@ app.onError(globalErrorHandler);
 
 const port = Number(process.env.PORT) || 8080;
 
+// ─── Sect Bot (optional) ─────────────────────────────────────
+import { startBot, stopBot } from "@/bot/index";
+
 const server = serve(
   {
     fetch: app.fetch,
@@ -787,6 +792,13 @@ const server = serve(
     setInterval(() => {
       anomalyEngine.saveState().catch(() => { });
     }, 300_000); // every 5 minutes
+
+    // Start Sect Bot if enabled
+    if (process.env.SECTBOT_ENABLED === "true" && process.env.TELEGRAM_BOT_TOKEN) {
+      startBot().catch((err) => {
+        log.error({ err }, "Failed to start Sect Bot");
+      });
+    }
 
     log.info(
       `🚀 Crypto Vision API running on http://localhost:${info.port}`
@@ -824,6 +836,13 @@ async function gracefulShutdown(signal: string) {
 
   // Stop WebSocket upstream connections
   await stopUpstreams();
+
+  // Stop Sect Bot
+  try {
+    await stopBot();
+  } catch {
+    /* best-effort */
+  }
 
   // Save anomaly engine state before shutdown
   try {

@@ -52,7 +52,7 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
 
   private readonly connection: Connection;
   private readonly strategy: TradingStrategy;
-  private readonly onlineSdk: OnlinePumpSdk;
+  private onlineSdk: OnlinePumpSdk | null = null;
   private mint: PublicKey | null = null;
   private running = false;
   private tradeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -73,7 +73,6 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
     this.wallet = wallet;
     this.connection = connection;
     this.strategy = strategy;
-    this.onlineSdk = new OnlinePumpSdk(connection);
 
     this.stats = {
       traderId: id,
@@ -84,6 +83,13 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
       solReceived: new BN(0),
       tokensHeld: new BN(0),
     };
+  }
+
+  private getOnlineSdk(): OnlinePumpSdk {
+    if (!this.onlineSdk) {
+      this.onlineSdk = new OnlinePumpSdk(this.connection);
+    }
+    return this.onlineSdk;
   }
 
   /**
@@ -135,8 +141,9 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
 
     try {
       // Fetch on-chain state required by buyInstructions
-      const global = await this.onlineSdk.fetchGlobal();
-      const buyState = await this.onlineSdk.fetchBuyState(
+      const sdk = this.getOnlineSdk();
+      const global = await sdk.fetchGlobal();
+      const buyState = await sdk.fetchBuyState(
         this.mint,
         this.wallet.keypair.publicKey,
         TOKEN_PROGRAM_ID,
@@ -243,8 +250,9 @@ export class TraderAgent extends EventEmitter<TraderAgentEvents> {
 
     try {
       // Fetch on-chain state required by sellInstructions
-      const global = await this.onlineSdk.fetchGlobal();
-      const sellState = await this.onlineSdk.fetchSellState(
+      const sdk = this.getOnlineSdk();
+      const global = await sdk.fetchGlobal();
+      const sellState = await sdk.fetchSellState(
         this.mint,
         this.wallet.keypair.publicKey,
         TOKEN_PROGRAM_ID,
