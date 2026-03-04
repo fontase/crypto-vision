@@ -123,6 +123,8 @@ docker compose -f docker-compose.ingest.yml up
 
 ## Environment Variables
 
+> 📖 See [docs/SECURITY_GUIDE.md](docs/SECURITY_GUIDE.md) for secrets management best practices.
+
 ### Core
 
 | Variable | Required | Default | Description |
@@ -193,6 +195,8 @@ docker compose -f docker-compose.ingest.yml up
 
 ## Architecture
 
+> 📖 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full architecture deep-dive.
+
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                        Clients                                   │
@@ -252,6 +256,8 @@ docker compose -f docker-compose.ingest.yml up
 ---
 
 ## API Reference
+
+> 📖 See [docs/API_REFERENCE.md](docs/API_REFERENCE.md) for endpoint details and [docs/API_AUTHENTICATION.md](docs/API_AUTHENTICATION.md) for auth tiers & rate limits.
 
 The full OpenAPI 3.1 specification is available at [openapi.yaml](openapi.yaml).
 
@@ -452,15 +458,20 @@ The full OpenAPI 3.1 specification is available at [openapi.yaml](openapi.yaml).
 
 ### WebSocket Endpoints
 
+> 📖 See [docs/WEBSOCKET.md](docs/WEBSOCKET.md) for message schemas, throttling, and client examples.
+
 | Path | Description |
 |---|---|
 | `/ws/prices` | Real-time price stream (CoinCap, 5Hz throttle) |
 | `/ws/bitcoin` | Bitcoin mempool & block updates (Mempool.space) |
 | `/ws/trades` | Live DEX trades (DexScreener) |
+| `/ws/alerts` | Anomaly detection alerts (real-time) |
 
 ---
 
 ## Data Sources
+
+> 📖 See [docs/DATA_SOURCES.md](docs/DATA_SOURCES.md) for adapter configuration and rate limit details.
 
 37 adapters in `src/sources/` connect to external APIs:
 
@@ -504,6 +515,8 @@ The full OpenAPI 3.1 specification is available at [openapi.yaml](openapi.yaml).
 ---
 
 ## Packages
+
+> 📖 See [docs/PACKAGES.md](docs/PACKAGES.md) for full package API documentation.
 
 Eight packages in `packages/` provide standalone functionality:
 
@@ -593,6 +606,8 @@ Three frontend applications in `apps/`:
 
 ## AI Agents
 
+> 📖 See [docs/AI_AGENTS.md](docs/AI_AGENTS.md) for the full agent catalog and prompt engineering guide.
+
 **58 specialized AI agents** in the `agents/` directory (`@nirholas/ai-agents-library` v1.42.0):
 
 ### Agent Categories
@@ -631,6 +646,8 @@ Agent prompts are translated into 18 languages: English, Spanish, French, German
 ---
 
 ## Workers & Ingestion
+
+> 📖 See [docs/WORKERS.md](docs/WORKERS.md) for worker configuration, scheduling, and troubleshooting.
 
 15 worker files in `src/workers/` provide background data ingestion:
 
@@ -685,6 +702,8 @@ npm run workers
 
 ## Telegram Bot (Sect Bot)
 
+> 📖 See [docs/TELEGRAM_BOT.md](docs/TELEGRAM_BOT.md) for bot commands, configuration, and deployment.
+
 A full-featured Telegram trading bot in `src/bot/` built on the grammy framework.
 
 ### Features
@@ -726,6 +745,8 @@ npm run dev
 ---
 
 ## Infrastructure
+
+> 📖 See [docs/INFRASTRUCTURE.md](docs/INFRASTRUCTURE.md) for Terraform modules and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for CI/CD pipelines.
 
 ### Google Cloud Platform (GCP)
 
@@ -799,6 +820,8 @@ bash infra/teardown.sh
 
 ## Training & Fine-Tuning
 
+> 📖 See [docs/TRAINING.md](docs/TRAINING.md) for the full training pipeline guide.
+
 Complete ML pipeline in `scripts/training/`:
 
 ### Training Data Generation
@@ -853,6 +876,8 @@ Kubernetes resources: `infra/k8s/training-job.yaml`, `infra/k8s/inference-deploy
 
 ## BigQuery Data Warehouse
 
+> 📖 See [docs/BIGQUERY.md](docs/BIGQUERY.md) for schema details, partitioning, and query examples.
+
 22+ tables defined in `infra/bigquery/tables.sql`:
 
 ### Table Categories
@@ -892,6 +917,8 @@ npm run import:postgres
 ---
 
 ## Testing
+
+> 📖 See [docs/TESTING.md](docs/TESTING.md) for test writing guidelines and CI integration.
 
 Comprehensive test suite using Vitest:
 
@@ -941,6 +968,8 @@ npx vitest --watch
 ---
 
 ## Monitoring & Observability
+
+> 📖 See [docs/MONITORING.md](docs/MONITORING.md) for Grafana dashboards, alerting rules, and [docs/ANOMALY_DETECTION.md](docs/ANOMALY_DETECTION.md) for the anomaly detection engine.
 
 ### Prometheus Metrics
 
@@ -1060,7 +1089,7 @@ crypto-vision/
 │   ├── fuzz/                   # Fuzz testing
 │   └── load/                   # Load tests (smoke, soak, stress)
 ├── docs/                       # Documentation
-│   ├── AGENTS.md               # 43+ AI agents guide
+│   ├── AGENTS.md               # 58 AI agents guide
 │   ├── API_REFERENCE.md        # Complete 300+ endpoint reference
 │   ├── ARCHITECTURE.md         # System architecture & data flow
 │   ├── COINGECKO_RATE_LIMITING.md # CoinGecko rate limiting strategy
