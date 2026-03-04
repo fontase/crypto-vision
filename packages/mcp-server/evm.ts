@@ -69,6 +69,9 @@ import { registerAIPrompts } from "@/modules/ai-prompts/index.js"
 import { registerHistoricalData } from "@/modules/historical-data/index.js"
 import { registerServerUtils } from "@/modules/server-utils/index.js"
 
+// PumpFun x402-gated token intelligence
+import { registerPumpFun } from "@/modules/pump-fun/index.js"
+
 /**
  * Register all EVM modules with the MCP server
  */
@@ -151,4 +154,7 @@ export function registerEVM(server: McpServer) {
   registerAIPrompts(server)
   registerHistoricalData(server)
   registerServerUtils(server)
+
+  // PumpFun token intelligence with x402 premium analytics
+  registerPumpFun(server)
 }

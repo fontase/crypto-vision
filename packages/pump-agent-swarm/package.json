@@ -1,0 +1,62 @@
+{
+  "name": "@nirholas/pump-agent-swarm",
+  "version": "0.1.0",
+  "description": "Pump.fun agent swarm — creator agents mint tokens, trader agents trade them, all coordinated via x402 micropayments",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "postinstall": "cd node_modules/@pump-fun/pump-sdk && npx tsc --declaration --emitDeclarationOnly --outDir dist --target ES2020 --module ES2020 --moduleResolution node --esModuleInterop --skipLibCheck --strict --resolveJsonModule src/*.ts src/idl/*.ts 2>/dev/null || true",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "start:dev": "npx tsx src/index.ts",
+    "start:creator": "npx tsx src/agents/creator-agent.ts",
+    "start:trader": "npx tsx src/agents/trader-agent.ts",
+    "start:swarm": "npx tsx src/swarm.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "pump-fun",
+    "agent-swarm",
+    "x402",
+    "solana",
+    "bonding-curve",
+    "meme-coin",
+    "ai-agent",
+    "trading-bot"
+  ],
+  "author": "nirholas",
+  "license": "MIT",
+  "dependencies": {
+    "@pump-fun/pump-sdk": "github:nirholas/pump-fun-sdk",
+    "@solana/web3.js": "^1.95.0",
+    "@solana/spl-token": "^0.4.0",
+    "@coral-xyz/anchor": "^0.30.0",
+    "bn.js": "^5.2.1",
+    "bs58": "^6.0.0",
+    "ethers": "^6.13.0",
+    "eventemitter3": "^5.0.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

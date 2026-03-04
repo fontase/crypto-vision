@@ -316,6 +316,69 @@ export const PREMIUM_PRICING = {
       'Webhook support',
     ],
   },
+  // =========================================================================
+  // PUMP.FUN ANALYTICS (Agent Swarm Intelligence)
+  // =========================================================================
+  '/api/premium/pump/analytics': {
+    price: 0.02,
+    description: 'Comprehensive Pump.fun token analytics — bonding curve state, holder distribution, rug score',
+    category: 'pump',
+    rateLimit: 60,
+    features: [
+      'Bonding curve reserves & price',
+      'Holder count & distribution',
+      'Rug risk scoring (0-100)',
+      'Creator wallet analysis',
+    ],
+  },
+  '/api/premium/pump/curve': {
+    price: 0.005,
+    description: 'Pump.fun bonding curve state — reserves, price, graduation progress',
+    category: 'pump',
+    rateLimit: 120,
+    features: [
+      'Virtual & real reserves',
+      'Current token price in SOL',
+      'Market cap calculation',
+      'Graduation progress %',
+    ],
+  },
+  '/api/premium/pump/launches': {
+    price: 0.01,
+    description: 'Recent Pump.fun token launches with analytics',
+    category: 'pump',
+    rateLimit: 30,
+    features: [
+      'New launches in last N minutes',
+      'Market cap filtering',
+      'Holder count per token',
+      'Early rug detection',
+    ],
+  },
+  '/api/premium/pump/signals': {
+    price: 0.03,
+    description: 'AI-generated trading signals for Pump.fun tokens',
+    category: 'pump',
+    rateLimit: 30,
+    features: [
+      'Buy/sell/hold signals',
+      'Confidence scores',
+      'Volume trend analysis',
+      'Graduation ETA prediction',
+    ],
+  },
+  '/api/premium/pump/holders': {
+    price: 0.02,
+    description: 'Pump.fun token holder analysis — top wallets, concentration, cluster detection',
+    category: 'pump',
+    rateLimit: 30,
+    features: [
+      'Top 20 holders with %',
+      'Wallet cluster detection',
+      'Creator holding status',
+      'Whale entry/exit tracking',
+    ],
+  },
 } as const;
 
 export type PremiumEndpoint = keyof typeof PREMIUM_PRICING;
@@ -394,6 +457,11 @@ export const PREMIUM_CATEGORIES = {
     name: 'Access Passes',
     icon: 'ticket',
     description: 'Unlimited access for a time period',
+  },
+  pump: {
+    name: 'Pump.fun Analytics',
+    icon: 'rocket',
+    description: 'Bonding curve analytics, holder analysis, and trading signals for Pump.fun tokens',
   },
 } as const;
 
