@@ -1,8 +1,11 @@
 # Crypto Vision
 
-> **The complete cryptocurrency intelligence platform** — [cryptocurrency.cv](https://cryptocurrency.cv)
+> A production-grade crypto intelligence platform — 200+ API endpoints, 37 data sources, 58 AI agents, real-time WebSocket feeds, anomaly detection, RAG-powered semantic search, BigQuery data warehouse, and a complete AI model training pipeline.
 
-Crypto Vision is a production-grade TypeScript monorepo that aggregates data from 30+ sources, powers 300+ API endpoints, runs a Telegram bot, orchestrates AI agent swarms, and provides real-time WebSocket feeds — all deployable via Docker, Kubernetes, or Google Cloud Run.
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-≥22-green)](https://nodejs.org/)
+[![Hono](https://img.shields.io/badge/Hono-4.7-orange)](https://hono.dev/)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-red)](LICENSE)
 
 ## What's Inside
 
@@ -32,10 +35,14 @@ Crypto Vision is a production-grade TypeScript monorepo that aggregates data fro
 | [Infrastructure](docs/INFRASTRUCTURE.md) | Docker, Kubernetes, Terraform, CI/CD |
 | [Testing](docs/TESTING.md) | Test strategy, running tests, coverage |
 | [Agents](docs/AGENTS.md) | 58 AI agents, localization, prompt system |
+| [Data Sources](docs/DATA_SOURCES.md) | All 37+ upstream data sources with endpoints and caching |
+| [Deployment](docs/DEPLOYMENT.md) | Docker, Cloud Run, Kubernetes, VPS deployment guide |
 | [Performance](docs/PERFORMANCE.md) | WebSocket throttling, caching, optimization |
 | [Self-Hosting](docs/SELF_HOSTING.md) | Run the full stack without GCP |
 | [Repository Guide](docs/REPOSITORY_GUIDE.md) | Full repo structure and project relationships |
 | [Developer Workflow](docs/DEVELOPER_WORKFLOW.md) | Day-to-day dev commands and workflows |
+| [Contributing](CONTRIBUTING.md) | Code standards, PR process, commit conventions |
+| [Security](SECURITY.md) | Security policy, vulnerability reporting |
 
 ---
 
