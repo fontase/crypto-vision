@@ -1,6 +1,11 @@
 /**
  * Example: Run a Pump.fun Agent Swarm
  *
+ * Usage:
+ *   npm run swarm           # Interactive CLI mode (default)
+ *   npm run swarm demo      # Demo mode with simulated interactions
+ *   npm run swarm present   # AI-narrated presentation mode for hackathons
+ *
  * This example shows the complete flow:
  * 1. Creator agent mints a token with a 0.5 SOL dev buy
  * 2. Three trader agents trade it back and forth using the "organic" strategy
@@ -17,13 +22,45 @@
  *   CREATOR_SECRET_KEY — Base58-encoded secret key for the creator wallet
  *   X402_PRIVATE_KEY   — (Optional) EVM private key for paying x402 analytics
  *   ANALYTICS_API_URL  — (Optional) Base URL of the x402 analytics API
+ *   OPENROUTER_API_KEY — (Required for presentation mode) OpenRouter API key
  */
 
 import { SwarmCoordinator, STRATEGY_ORGANIC } from '../index.js';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import BN from 'bn.js';
+import { PresentationMode } from '../demo/presentation.js';
 
 async function main() {
+  const mode = process.argv[2] || 'cli';
+
+  // Handle presentation mode
+  if (mode === 'present') {
+    const openRouterApiKey = process.env.OPENROUTER_API_KEY;
+    if (!openRouterApiKey) {
+      console.error('Error: OPENROUTER_API_KEY environment variable is required for presentation mode');
+      process.exit(1);
+    }
+
+    const presenter = new PresentationMode({
+      openRouterApiKey,
+      rpcUrl: process.env.SOLANA_RPC_URL,
+      presenterName: process.env.PRESENTER_NAME || 'Demo',
+      hackathonName: process.env.HACKATHON_NAME || 'Solana Hackathon 2026',
+      audience: (process.env.AUDIENCE as 'technical' | 'investor' | 'general') || 'technical',
+    });
+
+    const summary = await presenter.runPresentation();
+    console.log('\n\n✅ Presentation complete!');
+    return;
+  }
+
+  // Handle demo mode
+  if (mode === 'demo') {
+    console.log('Demo mode not yet implemented. Use "present" mode for AI-narrated demos.');
+    process.exit(1);
+  }
+
+  // Default: CLI mode
   const rpcUrl = process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com';
 
   // ─── Configure the Swarm ──────────────────────────────────
