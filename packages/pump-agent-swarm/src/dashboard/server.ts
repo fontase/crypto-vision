@@ -54,7 +54,7 @@ interface WebSocketConnection {
 
 // ─── Inline HTML Dashboard ────────────────────────────────────
 
-function buildDashboardHtml(port: number): string {
+function buildDashboardHtml(_port: number): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

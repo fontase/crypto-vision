@@ -102,7 +102,7 @@ const handleResume: CommandHandler = async (_ctx, swarm) => {
     return `▶️ *Trading resumed*`;
 };
 
-const handleEmergency: CommandHandler = async (ctx, swarm) => {
+const handleEmergency: CommandHandler = async (_ctx, swarm) => {
     await swarm.emergencyExit();
     return `🚨 *Emergency exit triggered*\nAll positions are being unwound\\.`;
 };

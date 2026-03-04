@@ -549,7 +549,7 @@ export class ConsensusEngine {
   }
 
   /** All non-abstaining votes must approve; any rejection → rejected */
-  private unanimousVote(stats: VoteStats, votes: AgentVote[]): ConsensusDecision | null {
+  private unanimousVote(_stats: VoteStats, votes: AgentVote[]): ConsensusDecision | null {
     const nonAbstaining = votes.filter((v) => v.vote !== 'abstain');
     if (nonAbstaining.length === 0) return null;
     return nonAbstaining.every((v) => v.vote === 'approve') ? 'approved' : 'rejected';

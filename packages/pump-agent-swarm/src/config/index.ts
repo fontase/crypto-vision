@@ -7,7 +7,6 @@
  */
 
 import type { SwarmMasterConfig } from '../types.js';
-import { DEFAULT_SWARM_CONFIG } from './defaults.js';
 import { loadSwarmConfigFromEnv } from './env.js';
 import { validateSwarmConfig } from './validation.js';
 

@@ -310,7 +310,7 @@ export class PhaseController {
       const check = this.canTransition(to);
       if (!check.allowed) {
         const msg = `Phase transition blocked: ${from} → ${to}. Blockers: ${check.blockers.join('; ')}`;
-        this.logger.error(msg, { from, to, blockers: check.blockers });
+        this.logger.error(msg, new Error(`from=${from}, to=${to}`));
         throw new Error(msg);
       }
     }
@@ -372,9 +372,10 @@ export class PhaseController {
       try {
         cb(from, to);
       } catch (err) {
-        this.logger.error('Phase change callback error', {
-          error: err instanceof Error ? err.message : String(err),
-        });
+        this.logger.error(
+          'Phase change callback error',
+          err instanceof Error ? err : new Error(String(err)),
+        );
       }
     }
   }
@@ -506,12 +507,10 @@ export class PhaseController {
     if (ratio >= 1.0) {
       const targetPhase = this.config.timeoutTransitions[this.currentPhase] ?? 'error';
 
-      this.logger.error(`Phase '${this.currentPhase}' timed out after ${elapsed}ms`, {
-        phase: this.currentPhase,
-        elapsed,
-        timeout,
-        targetPhase,
-      });
+      this.logger.error(
+        `Phase '${this.currentPhase}' timed out after ${elapsed}ms (timeout=${timeout}, target=${targetPhase})`,
+        new Error(`Phase timeout: ${this.currentPhase}`),
+      );
 
       this.eventBus.emit(
         'phase:timeout',

@@ -15,7 +15,7 @@
 
 import { SwarmEventBus } from '../infra/event-bus.js';
 import { SwarmLogger } from '../infra/logger.js';
-import type { SwarmEvent, SwarmEventCategory } from '../types.js';
+import type { SwarmEvent } from '../types.js';
 
 import { formatter } from './formatter.js';
 import type {
@@ -111,7 +111,7 @@ export class TelegramNotificationService {
         // Trade events
         if (this.config.autoNotifyTrades) {
             this.eventBus.subscribe(
-                { category: 'trade' as SwarmEventCategory },
+                'trade:*',
                 (event: SwarmEvent) => {
                     this.handleTradeEvent(event);
                 },
@@ -121,7 +121,7 @@ export class TelegramNotificationService {
         // Phase changes
         if (this.config.autoNotifyPhases) {
             this.eventBus.subscribe(
-                { category: 'phase' as SwarmEventCategory },
+                'phase:*',
                 (event: SwarmEvent) => {
                     this.handlePhaseEvent(event);
                 },
@@ -130,7 +130,7 @@ export class TelegramNotificationService {
 
         // Errors (always)
         this.eventBus.subscribe(
-            { category: 'error' as SwarmEventCategory },
+            'error:*',
             (event: SwarmEvent) => {
                 this.handleErrorEvent(event);
             },
@@ -138,7 +138,7 @@ export class TelegramNotificationService {
     }
 
     private handleTradeEvent(event: SwarmEvent): void {
-        const meta = event.metadata as Record<string, unknown>;
+        const meta = (event.payload ?? {}) as Record<string, unknown>;
         const amountSol = (meta['amountSol'] as number) ?? 0;
 
         // Filter by minimum size
@@ -146,12 +146,12 @@ export class TelegramNotificationService {
 
         const trade: TradeNotification = {
             direction: (meta['direction'] as 'buy' | 'sell') ?? 'buy',
-            agentId: event.agentId,
+            agentId: (meta['agentId'] as string) ?? event.source,
             tokenSymbol: (meta['tokenSymbol'] as string) ?? 'UNKNOWN',
             amountSol,
             price: (meta['price'] as number) ?? 0,
             signature: (meta['signature'] as string) ?? '',
-            success: event.success,
+            success: (meta['success'] as boolean) ?? true,
         };
 
         const body = formatter.formatTrade(trade);
@@ -159,7 +159,7 @@ export class TelegramNotificationService {
     }
 
     private handlePhaseEvent(event: SwarmEvent): void {
-        const meta = event.metadata as Record<string, unknown>;
+        const meta = (event.payload ?? {}) as Record<string, unknown>;
         const from = (meta['from'] as string) ?? 'unknown';
         const to = (meta['to'] as string) ?? 'unknown';
         const body = formatter.formatPhaseChange(from, to);
@@ -167,9 +167,12 @@ export class TelegramNotificationService {
     }
 
     private handleErrorEvent(event: SwarmEvent): void {
+        const meta = (event.payload ?? {}) as Record<string, unknown>;
+        const action = (meta['action'] as string) ?? '';
+        const details = (meta['details'] as string) ?? event.type;
         const level: NotificationLevel =
-            event.action.includes('critical') ? 'critical' : 'warning';
-        const body = formatter.formatError(event.details, level);
+            action.includes('critical') ? 'critical' : 'warning';
+        const body = formatter.formatError(details, level);
         void this.broadcast(level, 'Error', body);
     }
 

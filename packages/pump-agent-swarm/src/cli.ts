@@ -286,7 +286,7 @@ function buildSwarmConfig(args: CliArgs): SwarmConfig {
     },
     strategy: resolveStrategy(args.strategy),
     analyticsApiUrl: args.analyticsUrl,
-    x402PrivateKey: args.x402Key,
+    solanaPrivateKey: args.x402Key,
     devMode: args.devMode || !args.x402Key,
     logLevel: args.logLevel,
   };

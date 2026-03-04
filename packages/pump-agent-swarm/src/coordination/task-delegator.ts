@@ -396,7 +396,10 @@ export class TaskDelegator {
       this.releaseAgentCapacity(task.assignedTo);
     }
 
-    this.logger.error(`Task failed: ${task.title} — ${error}`, { taskId });
+    this.logger.error(
+      `Task failed: ${task.title} — ${error} (taskId=${taskId})`,
+      new Error(error),
+    );
 
     this.eventBus.emit(
       'task:failed',

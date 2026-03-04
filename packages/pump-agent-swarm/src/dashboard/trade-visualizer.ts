@@ -347,7 +347,7 @@ export class TradeVisualizer implements TradeVisualizerAdapter {
             target: tgt,
             value: t.solAmount,
             tradeCount: 1,
-            direction: t.direction,
+            direction: t.direction as 'buy' | 'sell',
           });
         }
       }

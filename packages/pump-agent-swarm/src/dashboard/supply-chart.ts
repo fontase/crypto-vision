@@ -12,7 +12,6 @@
  */
 
 import { PublicKey } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import type { SwarmEventBus } from '../infra/event-bus.js';
 import type { RpcPool } from '../infra/rpc-pool.js';
@@ -295,7 +294,7 @@ export class SupplyChart {
 
     // Resolve token account owners in parallel
     const holderEntries = await this.resolveHolderOwners(
-      largestAccounts.value,
+      largestAccounts.value as ReadonlyArray<{ address: PublicKey; amount: string; decimals: number; uiAmount: number | null; uiAmountString: string }>,
       curveAddress,
     );
 

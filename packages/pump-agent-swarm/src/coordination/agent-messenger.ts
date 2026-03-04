@@ -666,12 +666,10 @@ export class AgentMessenger {
       const errorMessage =
         err instanceof Error ? err.message : String(err);
 
-      this.logger.error('Message delivery failed', {
-        messageId: message.id,
-        from: message.from,
-        to: message.to,
-        error: errorMessage,
-      });
+      this.logger.error(
+        `Message delivery failed (id=${message.id}, from=${message.from}, to=${message.to})`,
+        err instanceof Error ? err : new Error(errorMessage),
+      );
 
       return {
         messageId: message.id,

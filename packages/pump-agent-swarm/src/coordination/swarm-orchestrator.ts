@@ -13,7 +13,7 @@
  * infrastructure built in prompts 01-49.
  */
 
-import { Connection, Keypair } from '@solana/web3.js';
+import { Keypair } from '@solana/web3.js';
 import BN from 'bn.js';
 import bs58 from 'bs58';
 import { v4 as uuidv4 } from 'uuid';
@@ -27,13 +27,11 @@ import { MetricsCollector }     from '../infra/metrics.js';
 import { SwarmErrorHandler }    from '../infra/error-handler.js';
 
 // ─── Config ───────────────────────────────────────────────────
-import { createSwarmConfig }    from '../config/index.js';
 
 // ─── Types ────────────────────────────────────────────────────
 import type {
   AgentWallet,
   RpcEndpoint,
-  SwarmEvent,
   SwarmMetrics,
   SwarmPhase,
   TradingStrategy,
@@ -55,6 +53,7 @@ import { SignalGenerator }      from '../intelligence/signal-generator.js';
 
 // ─── Agents ───────────────────────────────────────────────────
 import { NarrativeAgent }       from '../agents/narrative-agent.js';
+import type { NarrativeOptions } from '../agents/narrative-agent.js';
 import { ScannerAgent }         from '../agents/scanner-agent.js';
 import { CreatorAgent }         from '../agents/creator-agent.js';
 import { TraderAgent }          from '../agents/trader-agent.js';
@@ -72,10 +71,8 @@ import { WashEngine }           from '../trading/wash-engine.js';
 // ─── Wallet ───────────────────────────────────────────────────
 import {
   createAgentWallet,
-  restoreAgentWallet,
   generateWalletPool,
   refreshBalances,
-  fundTraders,
   WalletVault,
 } from '../wallet-manager.js';
 
@@ -227,7 +224,6 @@ export class SwarmOrchestrator {
 
   // ── Intelligence ────────────────────────────────────────────
   private strategyBrain!: StrategyBrain;
-  private riskManager!: RiskManager;
   private signalGenerator!: SignalGenerator;
 
   // ── Wallets ─────────────────────────────────────────────────
@@ -244,12 +240,10 @@ export class SwarmOrchestrator {
   private sniperAgent!: SniperAgent;
   private marketMakerAgent!: MarketMakerAgent;
   private volumeAgent!: VolumeAgent;
-  private accumulatorAgent!: AccumulatorAgent;
   private exitAgent!: ExitAgent;
 
   // ── Bundle & Trading ────────────────────────────────────────
   private launchSequencer!: LaunchSequencer;
-  private washEngine!: WashEngine;
 
   // ── Runtime state ───────────────────────────────────────────
   private initialized = false;
@@ -326,7 +320,7 @@ export class SwarmOrchestrator {
         initialPhase: 'idle',
         transitions: DEFAULT_SWARM_TRANSITIONS,
         onError: (error, phase) => {
-          this.logger.error(`State machine error in phase ${phase}`, { error: error.message });
+          this.logger.error(`State machine error in phase ${phase}`, error);
           return 'error';
         },
         onTimeout: (phase) => {
@@ -397,7 +391,8 @@ export class SwarmOrchestrator {
     };
     this.strategyBrain = new StrategyBrain(brainConfig, this.eventBus);
 
-    this.riskManager = new RiskManager(this.config.riskLimits, this.eventBus);
+    // RiskManager registers event listeners on the bus and is retained by them
+    void new RiskManager(this.config.riskLimits, this.eventBus);
     this.signalGenerator = new SignalGenerator(primaryConnection, this.eventBus);
 
     // ── Step 4: Coordination Layer ────────────────────────────
@@ -513,7 +508,8 @@ export class SwarmOrchestrator {
 
     // Accumulator agent
     const accWallet = createAgentWallet('accumulator');
-    this.accumulatorAgent = new AccumulatorAgent(accWallet, primaryConnection, {
+    // AccumulatorAgent registers event listeners and is retained by the event bus
+    void new AccumulatorAgent(accWallet, primaryConnection, {
       strategy: 'adaptive',
       maxPriceImpactPercent: 3,
       maxSlippageBps: 500,
@@ -564,7 +560,8 @@ export class SwarmOrchestrator {
       },
     );
 
-    this.washEngine = new WashEngine(
+    // WashEngine registers event listeners and is retained by the event bus
+    void new WashEngine(
       this.traderWallets.length >= 2 ? this.traderWallets : [createAgentWallet('wash-0'), createAgentWallet('wash-1')],
       primaryConnection,
       {
@@ -739,11 +736,10 @@ export class SwarmOrchestrator {
           { operation: 'main-loop' },
         );
 
-        this.logger.error('Main loop error', {
-          severity: classified.severity,
-          category: classified.category,
-          suggestedAction: classified.suggestedAction,
-        });
+        this.logger.error(
+          `Main loop error (severity=${classified.severity}, category=${classified.category}, action=${classified.suggestedAction})`,
+          err instanceof Error ? err : new Error(String(err)),
+        );
 
         if (classified.severity === 'fatal') {
           await this.stop('fatal-error');
@@ -807,8 +803,8 @@ export class SwarmOrchestrator {
 
     // Generate narrative
     const narrative = await this.narrativeAgent.generateNarrative({
-      category: decision.launchParams?.category,
-      narrative: decision.launchParams?.narrative,
+      theme: decision.launchParams?.category as NarrativeOptions['theme'],
+      customPrompt: decision.launchParams?.narrative,
     });
 
     this.logger.info('Narrative generated', {
@@ -1187,9 +1183,10 @@ export class SwarmOrchestrator {
         this.logger.warn(`Forced phase transition: ${from} → ${to}`);
       }
     } catch (err) {
-      this.logger.error(`Phase transition failed: ${from} → ${to}`, {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      this.logger.error(
+        `Phase transition failed: ${from} → ${to}`,
+        err instanceof Error ? err : new Error(String(err)),
+      );
       // Don't throw — continue with current phase
     }
   }
@@ -1479,7 +1476,7 @@ export class SwarmOrchestrator {
       to: '*',
       type: 'shutdown-request',
       priority: 'critical',
-      payload: { type: 'shutdown-request' as const, reason: reason ?? 'manual' } as unknown as Record<string, never>,
+      payload: { type: 'shutdown-request' as const, reason: reason ?? 'manual', graceful: true, deadline: Date.now() + INFLIGHT_TRADE_TIMEOUT_MS },
       timestamp: Date.now(),
       ttl: INFLIGHT_TRADE_TIMEOUT_MS,
     });
@@ -1509,9 +1506,10 @@ export class SwarmOrchestrator {
       await refreshBalances(connection, pool);
       this.logger.info('Funds reclaim completed');
     } catch (err) {
-      this.logger.error('Funds reclaim failed', {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      this.logger.error(
+        'Funds reclaim failed',
+        err instanceof Error ? err : new Error(String(err)),
+      );
     }
 
     // 7. Generate final session report

@@ -33,7 +33,6 @@ export interface ValidationResult {
 
 const URL_PATTERN = /^https?:\/\/.+/;
 const WS_URL_PATTERN = /^wss?:\/\/.+/;
-const BASE58_PATTERN = /^[1-9A-HJ-NP-Za-km-z]+$/;
 
 function validateRpc(rpc: RpcPoolConfig, errors: string[], warnings: string[]): void {
   if (rpc.endpoints.length === 0) {

@@ -48,9 +48,6 @@ const DEFAULT_MAX_RETRIES = 3;
 /** Default base delay for exponential backoff */
 const DEFAULT_RETRY_BASE_DELAY_MS = 500;
 
-/** Default request timeout in ms */
-const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
-
 /** Number of latency samples to keep for rolling average */
 const LATENCY_WINDOW_SIZE = 10;
 
